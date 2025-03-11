@@ -1,1 +1,1 @@
-print(torch.__version__)
+print("Test")
