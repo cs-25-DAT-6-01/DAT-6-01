@@ -62,6 +62,8 @@ def tokenize_function(examples):
 
 train_dataset = train_dataset.map(tokenize_function, batched=True, remove_columns=["text"])
 
+train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
+train_dataset.format()
 
 # DataLoader for the dataset
 train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True)
