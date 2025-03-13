@@ -95,9 +95,9 @@ for epoch in range(num_epochs):
     total_loss = 0
     for batch in train_dataloader:
 
-        input_ids = torch.cat(batch["input_ids"], dim=0)
+        input_ids = torch.tensor(batch["input_ids"], dtype=torch.long)
         print("input ids:", input_ids)
-        attention_mask = torch.cat(batch["attention_mask"], dim=0)
+        attention_mask = torch.tensor(batch["attention_mask"], dtype=torch.long)
         print("attention mask:", attention_mask)
         labels = input_ids.clone()  # Language modeling, labels are input_ids
 
