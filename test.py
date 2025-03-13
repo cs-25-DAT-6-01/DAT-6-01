@@ -9,17 +9,15 @@ from torch.utils.data import DataLoader
 from transformers import AdamW
 import math
 
-os.environ["HUGGING_FACE_HUB_TOKEN"] = os.getenv("HF_TOKEN")
-
 # Load the pre-trained LLaMA 3-8B model (teacher)
 teacher_model_name = "meta-llama/llama-3-8b"
-teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
-teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
+teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name, token=os.getenv("HF_TOKEN"))
+teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, token=os.getenv("HF_TOKEN"))
 
 # Load the pre-trained LLaMA 3-1B model (student)
 student_model_name = "meta-llama/llama-3-1b"
-student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
-student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
+student_tokenizer = AutoTokenizer.from_pretrained(student_model_name, token=os.getenv("HF_TOKEN"))
+student_model = AutoModelForCausalLM.from_pretrained(student_model_name, token=os.getenv("HF_TOKEN"))
 
 def distillation_loss(student_logits, teacher_logits, true_labels, T=2.0, alpha=0.7):
     """
