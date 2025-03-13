@@ -15,11 +15,13 @@ login(os.getenv("HF_TOKEN"))
 # Load the pre-trained LLaMA 3-8B model (teacher)
 teacher_model_name = "meta-llama/Llama-3.1-8B"
 teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
+teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
 # Load the pre-trained LLaMA 3-1B model (student)
 student_model_name = "meta-llama/Llama-3.2-1B"
 student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
+student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
 
 def distillation_loss(student_logits, teacher_logits, true_labels, T=2.0, alpha=0.7):
