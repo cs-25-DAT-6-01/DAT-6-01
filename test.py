@@ -12,12 +12,14 @@ from huggingface_hub import login
 
 login(os.getenv("HF_TOKEN"))
 
+print("Loading Llama 3-3B model")
 # Load the pre-trained LLaMA 3-3B model (teacher)
 teacher_model_name = "meta-llama/Llama-3.2-3B"
 teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
 teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
+print("Loading Llama 3-1B model")
 # Load the pre-trained LLaMA 3-1B model (student)
 student_model_name = "meta-llama/Llama-3.2-1B"
 student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
@@ -48,13 +50,14 @@ def distillation_loss(student_logits, teacher_logits, true_labels, T=2.0, alpha=
     return alpha * ce_loss + (1 - alpha) * (T * T) * kl_loss
 
 
+print("Loading wikitext dataset")
 # Example: Load a dataset like "wikitext"
 dataset = load_dataset("wikitext", "wikitext-103-raw-v1")
 train_dataset = dataset["train"]
 
 # Tokenize the dataset
 def tokenize_function(examples):
-    return teacher_tokenizer(examples['text'], return_tensors="pt", padding=True, truncation=True)
+    return teacher_tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True, max_length=512)
 
 
 train_dataset = train_dataset.map(tokenize_function, batched=True, remove_columns=["text"])
@@ -67,18 +70,24 @@ train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True)
 optimizer = AdamW(student_model.parameters(), lr=5e-5)
 
 # Training loop
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+else:
+    raise RuntimeError("No GPU available")
 
+print("Wraps in DataParallel container")
 # Multiple gpus
 teacher_model = nn.DataParallel(teacher_model)
 student_model = nn.DataParallel(student_model)
 
+print("Moving to GPU")
 # Move to device
 teacher_model.to(device)
 student_model.to(device)
 
 num_epochs = 3
 
+print("Starting training")
 for epoch in range(num_epochs):
     student_model.train()
     teacher_model.eval()  # Teacher model doesn't need gradient updates
@@ -114,6 +123,7 @@ for epoch in range(num_epochs):
 # Evaluate the student model
 student_model.eval()
 
+print("Starting evaluation")
 with torch.no_grad():
     eval_loss = 0
     num_eval_batches = 0
@@ -129,6 +139,7 @@ with torch.no_grad():
     perplexity = math.exp(avg_eval_loss)
     print(f"Perplexity: {perplexity}")
 
+print("Saving model")
 # Save the student model and tokenizer
 student_model.save_pretrained("student_model")
 student_tokenizer.save_pretrained("student_model")
