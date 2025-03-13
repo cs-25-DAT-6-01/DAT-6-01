@@ -13,12 +13,12 @@ from huggingface_hub import login
 login(os.getenv("HF_TOKEN"))
 
 # Load the pre-trained LLaMA 3-8B model (teacher)
-teacher_model_name = "meta-llama/Llama-3-8B"
+teacher_model_name = "meta-llama/Llama-3.1-8B"
 teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
 teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
 # Load the pre-trained LLaMA 3-1B model (student)
-student_model_name = "meta-llama/Llama-3-1B"
+student_model_name = "meta-llama/Llama-3.2-1B"
 student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
 student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
 
