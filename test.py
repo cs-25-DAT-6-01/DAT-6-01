@@ -1,4 +1,4 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,12 +8,12 @@ from transformers import AdamW
 import math
 
 # Load the pre-trained LLaMA 3-8B model (teacher)
-teacher_model_name = "meta/llama-3-8b"
+teacher_model_name = "meta-llama/Llama-3-8b"
 teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
 teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
 # Load the pre-trained LLaMA 3-1B model (student)
-student_model_name = "meta/llama-3-1b"
+student_model_name = "meta-llama/Llama-3-1b"
 student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
 student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
 
