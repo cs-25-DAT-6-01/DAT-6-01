@@ -12,17 +12,17 @@ from huggingface_hub import login
 
 login(os.getenv("HF_TOKEN"))
 
-print("Loading Qwen 2.5-0.5B model")
+print("Loading Qwen2.5-1.5B model")
 # Load the pre-trained Qwen/Qwen2.5-0.5B model (teacher)
-teacher_model_name = "Qwen/Qwen2.5-0.5B"
+teacher_model_name = "Qwen/Qwen2.5-1.5B"
 teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
 teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
 #teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
-print("Loading Qwen/Qwen2.5-1.5B model")
-# Load the pre-trained Qwen/Qwen2.5-1.5B model (student)
-student_model_name = "meta-llama/Qwen/Qwen2.5-1.5B"
+print("Loading Qwen2.5-0.5B model")
+# Load the pre-trained "Qwen/Qwen2.5-0.5B" model (student)
+student_model_name = "Qwen/Qwen2.5-0.5B"
 student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
 student_tokenizer.pad_token = student_tokenizer.eos_token
 #student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
