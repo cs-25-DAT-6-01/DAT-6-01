@@ -95,10 +95,10 @@ for epoch in range(num_epochs):
     total_loss = 0
     for batch in train_dataloader:
 
-        input_ids = torch.tensor(batch["input_ids"], dtype=torch.long)
-        print("input ids:", input_ids)
-        attention_mask = torch.tensor(batch["attention_mask"], dtype=torch.long)
-        print("attention mask:", attention_mask)
+        input_ids = torch.stack(batch["input_ids"])
+        print("input ids:", input_ids.shape)
+        attention_mask = torch.stack(batch["attention_mask"])
+        print("attention mask:", attention_mask.shape)
         labels = input_ids.clone()  # Language modeling, labels are input_ids
 
         # Forward pass through the student model
