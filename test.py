@@ -95,8 +95,8 @@ for epoch in range(num_epochs):
     total_loss = 0
     for batch in train_dataloader:
         # Move tensors to the correct device (GPU/CPU)
-        input_ids = torch.tensor(batch["input_ids"].to(device))
-        attention_mask = torch.tensor(batch["attention_mask"].to(device))
+        input_ids = torch.tensor(batch["input_ids"]).to(device)
+        attention_mask = torch.tensor(batch["attention_mask"]).to(device)
         labels = input_ids.clone()  # Language modeling, labels are input_ids
 
         # Forward pass through the student model
