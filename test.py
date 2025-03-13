@@ -96,9 +96,9 @@ for epoch in range(num_epochs):
     total_loss = 0
     for batch in train_dataloader:
 
-        input_ids = torch.stack(batch["input_ids"])
+        input_ids = batch["input_ids"].to(device)
         print("input ids:", input_ids.shape)
-        attention_mask = torch.stack(batch["attention_mask"])
+        attention_mask = batch["attention_mask"].to(device)
         print("attention mask:", attention_mask.shape)
         labels = input_ids.clone()  # Language modeling, labels are input_ids
 
