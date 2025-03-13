@@ -1,3 +1,5 @@
+import os
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import torch.nn as nn
@@ -7,13 +9,15 @@ from torch.utils.data import DataLoader
 from transformers import AdamW
 import math
 
+os.environ["HUGGING_FACE_HUB_TOKEN"] = os.getenv("HF_TOKEN")
+
 # Load the pre-trained LLaMA 3-8B model (teacher)
-teacher_model_name = "meta-llama/Llama-3-8b"
+teacher_model_name = "meta-llama/llama-3-8b"
 teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
 teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
 # Load the pre-trained LLaMA 3-1B model (student)
-student_model_name = "meta-llama/Llama-3-1b"
+student_model_name = "meta-llama/llama-3-1b"
 student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
 student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
 
