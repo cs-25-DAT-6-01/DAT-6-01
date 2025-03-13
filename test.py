@@ -16,6 +16,7 @@ print("Loading Llama 3-3B model")
 # Load the pre-trained LLaMA 3-3B model (teacher)
 teacher_model_name = "meta-llama/Llama-3.2-3B"
 teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
+teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
 #teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
@@ -23,6 +24,7 @@ print("Loading Llama 3-1B model")
 # Load the pre-trained LLaMA 3-1B model (student)
 student_model_name = "meta-llama/Llama-3.2-1B"
 student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
+student_tokenizer.pad_token = student_tokenizer.eos_token
 #student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
 
