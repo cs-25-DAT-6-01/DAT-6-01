@@ -12,8 +12,8 @@ from huggingface_hub import login
 
 login(os.getenv("HF_TOKEN"))
 
-# Load the pre-trained LLaMA 3-8B model (teacher)
-teacher_model_name = "meta-llama/Llama-3.1-8B"
+# Load the pre-trained LLaMA 3-3B model (teacher)
+teacher_model_name = "meta-llama/Llama-3.2-3B"
 teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
 teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
@@ -48,8 +48,6 @@ def distillation_loss(student_logits, teacher_logits, true_labels, T=2.0, alpha=
     return alpha * ce_loss + (1 - alpha) * (T * T) * kl_loss
 
 
-
-
 # Example: Load a dataset like "wikitext"
 dataset = load_dataset("wikitext", "wikitext-103-raw-v1")
 train_dataset = dataset["train"]
@@ -58,8 +56,8 @@ train_dataset = dataset["train"]
 def tokenize_function(examples):
     return teacher_tokenizer(examples['text'], return_tensors="pt", padding=True, truncation=True)
 
-train_dataset = train_dataset.map(tokenize_function, batched=True, remove_columns=["text"])
 
+train_dataset = train_dataset.map(tokenize_function, batched=True, remove_columns=["text"])
 
 
 # DataLoader for the dataset
