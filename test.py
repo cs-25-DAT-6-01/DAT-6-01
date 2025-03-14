@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from transformers import AdamW
 import math
 from huggingface_hub import login
+from tqdm import tqdm
 
 login(os.getenv("HF_TOKEN"))
 
@@ -20,9 +21,9 @@ teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
 #teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
-print("Loading Qwen2.5-0.5B model")
-# Load the pre-trained "Qwen/Qwen2.5-0.5B" model (student)
-student_model_name = "Qwen/Qwen2.5-0.5B"
+print("Loading openai-community/gpt2 model")
+# Load the pre-trained "openai-community/gpt2" model (student)
+student_model_name = "openai-community/gpt2"
 student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
 student_tokenizer.pad_token = student_tokenizer.eos_token
 #student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
@@ -62,12 +63,12 @@ def tokenize_function(examples):
     return teacher_tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True, max_length=512)
 
 
-train_dataset = train_dataset.map(tokenize_function, batched=True, remove_columns=["text"], batch_size=64)
+train_dataset = train_dataset.map(tokenize_function, batched=True, remove_columns=["text"], tqdm_class=tqdm)
 
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
 # DataLoader for the dataset
-train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 
 # Define optimizer for the student model
 optimizer = AdamW(student_model.parameters(), lr=5e-5)
@@ -77,6 +78,8 @@ if torch.cuda.is_available():
     device = torch.device("cuda")
 else:
     raise RuntimeError("No GPU available")
+
+print("Memory usage", torch.cuda.memory_summary())
 
 print("Wraps in DataParallel container")
 # Multiple gpus
