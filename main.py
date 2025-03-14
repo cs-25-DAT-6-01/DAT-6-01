@@ -49,6 +49,7 @@ def distillation_loss(student_logits, teacher_logits, true_labels, T=2.0, alpha=
 def train(rank, world_size):
     login(os.getenv("HF_TOKEN"))
 
+    print("GPU: ", rank)
     print("Loading Qwen2.5-0.5B model")
     # Load the pre-trained Qwen/Qwen2.5-0.5B model (teacher)
     teacher_model_name = "Qwen/Qwen2.5-0.5B"
@@ -110,7 +111,7 @@ def train(rank, world_size):
     # teacher_model = nn.DataParallel(teacher_model)
     # student_model = nn.DataParallel(student_model)
 
-    print("Moving to GPU")
+    # print("Moving to GPU")
     # Move to device
     # teacher_model.to(device)
     # student_model.to(device)
@@ -126,11 +127,11 @@ def train(rank, world_size):
         teacher_model.eval()  # Teacher model doesn't need gradient updates
 
         total_loss = 0
-        for batch in train_dataloader:
+        for input_ids, attention_mask in train_dataloader:
 
-            input_ids = batch["input_ids"].to(device)
+            input_ids = input_ids.to(rank)
             print("input ids:", input_ids.shape)
-            attention_mask = batch["attention_mask"].to(device)
+            attention_mask = attention_mask.to(rank)
             print("attention mask:", attention_mask.shape)
             labels = input_ids.clone()  # Language modeling, labels are input_ids
 
