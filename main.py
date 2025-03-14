@@ -89,7 +89,7 @@ def train(rank, world_size):
     student_model = DDP(student_model, device_ids=[rank])
 
     print("Starting tokenization")
-    train_dataset = train_dataset.map(tokenize_function, batched=True, remove_columns=["text"])
+    train_dataset = train_dataset.map(tokenize_function, batched=True)
 
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
