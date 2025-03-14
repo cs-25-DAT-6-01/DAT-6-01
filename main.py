@@ -81,7 +81,6 @@ def train(rank, world_size):
     print("Wraps in DataParallel container")
     # Multiple gpus
     torch.cuda.set_device(rank)
-    setup(rank, world_size)
 
     teacher_model.to(rank)
     teacher_model = DDP(teacher_model, device_ids=[rank])
