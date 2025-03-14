@@ -2,7 +2,6 @@ import os
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset
 from torch.utils.data import DataLoader
@@ -54,7 +53,7 @@ def train(rank, world_size):
     # Load the pre-trained Qwen/Qwen2.5-0.5B model (teacher)
     teacher_model_name = "Qwen/Qwen2.5-0.5B"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
-    teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
+    #teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
@@ -62,7 +61,7 @@ def train(rank, world_size):
     # Load the pre-trained "openai-community/gpt2" model (student)
     student_model_name = "openai-community/gpt2"
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
-    student_tokenizer.pad_token = student_tokenizer.eos_token
+    #student_tokenizer.pad_token = student_tokenizer.eos_token
     # student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
 
@@ -136,10 +135,6 @@ def train(rank, world_size):
             attention_mask = batch["attention_mask"].squeeze(1).to(rank)
             print("attention mask:", attention_mask.shape)
             labels = input_ids.clone().detach()  # Language modeling, labels are input_ids
-
-            # Check for valid indices
-            if torch.any(input_ids >= student_model.config.vocab_size):
-                raise ValueError("Input contains indices that are out of bounds for the embedding layer")
 
             # Forward pass through the student model
             student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
