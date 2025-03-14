@@ -178,7 +178,7 @@ def train(rank, world_size):
 
     print("Saving model")
     # Save the student model and tokenizer
-    student_model.save_pretrained("student_model")
+    student_model.module.save_pretrained("student_model")
     student_tokenizer.save_pretrained("student_model")
     cleanup()
 
