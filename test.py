@@ -6,10 +6,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset
 from torch.utils.data import DataLoader
-from transformers import AdamW
 import math
 from huggingface_hub import login
-from tqdm import tqdm
+from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.distributed as dist
+
+def setup(rank, world_size):
+    dist.init_process_group(rank=rank, world_size=world_size)
+
+
+def cleanup():
+    dist.destroy_process_group()
+
 
 login(os.getenv("HF_TOKEN"))
 
@@ -71,7 +79,7 @@ train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
 
 # Define optimizer for the student model
-optimizer = AdamW(student_model.parameters(), lr=5e-5)
+optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
 
 # Training loop
 if torch.cuda.is_available():
@@ -81,8 +89,18 @@ else:
 
 print("Wraps in DataParallel container")
 # Multiple gpus
-teacher_model = nn.DataParallel(teacher_model)
-student_model = nn.DataParallel(student_model)
+rank = 0
+setup(rank, world_size=1)
+dev0 = rank * 2
+dev1 = rank * 2 + 1
+mpt_model = teacher_model(dev0, dev1)
+teacher_model = DDP(mpt_model)
+
+mps_model = student_model(dev0, dev1)
+student_model = DDP(mps_model)
+
+#teacher_model = nn.DataParallel(teacher_model)
+#student_model = nn.DataParallel(student_model)
 
 print("Moving to GPU")
 # Move to device
