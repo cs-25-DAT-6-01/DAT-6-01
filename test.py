@@ -21,9 +21,9 @@ teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
 #teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
-print("Loading openai-community/gpt2 model")
-# Load the pre-trained "openai-community/gpt2" model (student)
-student_model_name = "openai-community/gpt2"
+print("Loading Qwen/Qwen2.5-1.5B model")
+# Load the pre-trained "Qwen/Qwen2.5-1.5B" model (student)
+student_model_name = "Qwen/Qwen2.5-0.5B"
 student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
 student_tokenizer.pad_token = student_tokenizer.eos_token
 #student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
