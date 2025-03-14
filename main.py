@@ -49,9 +49,9 @@ def train(rank, world_size):
     login(os.getenv("HF_TOKEN"))
 
     print("GPU: ", rank)
-    print("Loading Qwen2.5-0.5B model")
+    print("Loading openai-community/gpt2-large")
     # Load the pre-trained Qwen/Qwen2.5-0.5B model (teacher)
-    teacher_model_name = "Qwen/Qwen2.5-0.5B"
+    teacher_model_name = "openai-community/gpt2-large"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     #teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
@@ -136,15 +136,14 @@ def train(rank, world_size):
             print("attention mask:", attention_mask.shape)
             labels = input_ids.clone().detach()  # Language modeling, labels are input_ids
 
+            # Forward pass through the student model
+            student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
+            student_logits = student_outputs.logits
+
             # Forward pass through the teacher model (no gradients)
             with torch.no_grad():
                 teacher_outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
                 teacher_logits = teacher_outputs.logits
-
-
-            # Forward pass through the student model
-            student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
-            student_logits = student_outputs.logits
 
             # Calculate distillation loss
             loss = distillation_loss(student_logits, teacher_logits, labels, T=2.0, alpha=0.7)
