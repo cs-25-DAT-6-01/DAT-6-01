@@ -158,7 +158,6 @@ def train(rank, world_size):
         print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss / len(train_dataloader)}")
 
     # Evaluate the student model
-    cleanup()
     student_model.eval()
 
     print("Starting evaluation")
@@ -181,6 +180,7 @@ def train(rank, world_size):
     # Save the student model and tokenizer
     student_model.save_pretrained("student_model")
     student_tokenizer.save_pretrained("student_model")
+    cleanup()
 
 
 def main():
