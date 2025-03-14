@@ -130,20 +130,21 @@ def train(rank, world_size):
 
             print("Batch size:", len(batch))
             print("Batch:", batch)
-            input_ids = batch["input_ids"].squeeze(1).to(rank)
+            input_ids = batch["input_ids"].to(rank)
             print("input ids:", input_ids.shape)
-            attention_mask = batch["attention_mask"].squeeze(1).to(rank)
+            attention_mask = batch["attention_mask"].to(rank)
             print("attention mask:", attention_mask.shape)
             labels = input_ids.clone().detach()  # Language modeling, labels are input_ids
-
-            # Forward pass through the student model
-            student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
-            student_logits = student_outputs.logits
 
             # Forward pass through the teacher model (no gradients)
             with torch.no_grad():
                 teacher_outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
                 teacher_logits = teacher_outputs.logits
+
+
+            # Forward pass through the student model
+            student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
+            student_logits = student_outputs.logits
 
             # Calculate distillation loss
             loss = distillation_loss(student_logits, teacher_logits, labels, T=2.0, alpha=0.7)
