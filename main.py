@@ -96,7 +96,7 @@ def train(rank, world_size):
     train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
 
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=32, sampler=train_sampler)
+    train_dataloader = DataLoader(train_dataset, batch_size=16, sampler=train_sampler)
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
