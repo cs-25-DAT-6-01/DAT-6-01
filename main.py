@@ -127,16 +127,16 @@ def train(rank, world_size):
         teacher_model.eval()  # Teacher model doesn't need gradient updates
 
         total_loss = 0
-        for input_ids, attention_mask in train_dataloader:
+        for batch in train_dataloader:
 
-            input_ids = input_ids.to(rank)
+            input_ids = batch["input_ids"].to(rank)
             print("input ids:", input_ids.shape)
-            attention_mask = attention_mask.to(rank)
+            attention_mask = batch["attention_mask"].to(rank)
             print("attention mask:", attention_mask.shape)
             labels = input_ids.clone()  # Language modeling, labels are input_ids
 
             # Forward pass through the student model
-            student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
+            student_outputs = student_model(input_ids, attention_mask)
             student_logits = student_outputs.logits
 
             # Forward pass through the teacher model (no gradients)
