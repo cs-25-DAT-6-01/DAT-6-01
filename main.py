@@ -135,7 +135,7 @@ def train(rank, world_size):
             print("input ids:", input_ids.shape)
             attention_mask = batch["attention_mask"].to(rank)
             print("attention mask:", attention_mask.shape)
-            labels = input_ids.clone().detach()  # Language modeling, labels are input_ids
+            labels = input_ids.clone()  # Language modeling, labels are input_ids
 
             # Forward pass through the student model
             student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
