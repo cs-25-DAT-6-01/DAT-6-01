@@ -53,7 +53,7 @@ def train(rank, world_size):
     # Load the pre-trained Qwen/Qwen2.5-0.5B model (teacher)
     teacher_model_name = "openai-community/gpt2-large"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
-    #teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
+    teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
 
@@ -61,7 +61,7 @@ def train(rank, world_size):
     # Load the pre-trained "openai-community/gpt2" model (student)
     student_model_name = "openai-community/gpt2"
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
-    #student_tokenizer.pad_token = student_tokenizer.eos_token
+    student_tokenizer.pad_token = student_tokenizer.eos_token
     # student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
 
