@@ -68,7 +68,7 @@ train_dataset = train_dataset.map(tokenize_function, batched=True, remove_column
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
 # DataLoader for the dataset
-train_dataloader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+train_dataloader = DataLoader(train_dataset, batch_size=1, shuffle=True)
 
 # Define optimizer for the student model
 optimizer = AdamW(student_model.parameters(), lr=5e-5)
@@ -79,8 +79,6 @@ if torch.cuda.is_available():
 else:
     raise RuntimeError("No GPU available")
 
-print("Memory usage", torch.cuda.memory_summary())
-
 print("Wraps in DataParallel container")
 # Multiple gpus
 teacher_model = nn.DataParallel(teacher_model)
@@ -90,6 +88,8 @@ print("Moving to GPU")
 # Move to device
 teacher_model.to(device)
 student_model.to(device)
+
+print("Memory usage", torch.cuda.memory_summary())
 
 num_epochs = 3
 
