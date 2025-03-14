@@ -67,7 +67,7 @@ def train(rank, world_size):
 
     print("Loading wikitext dataset")
     # Example: Load a dataset like "wikitext"
-    dataset = load_dataset("wikitext", "wikitext-103-raw-v1")
+    dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
     train_dataset = dataset["train"]
 
     # Tokenize the dataset
@@ -88,7 +88,7 @@ def train(rank, world_size):
     student_model.to(rank)
     student_model = DDP(student_model, device_ids=[rank])
 
-
+    print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True, remove_columns=["text"])
 
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
