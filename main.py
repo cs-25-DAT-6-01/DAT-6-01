@@ -97,7 +97,7 @@ def train(rank, world_size):
     train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
 
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=1, sampler=train_sampler)
+    train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
@@ -129,6 +129,8 @@ def train(rank, world_size):
         total_loss = 0
         for batch in train_dataloader:
 
+            print("Batch size:", len(batch))
+            print("Batch:", batch)
             input_ids = torch.tensor(batch["input_ids"].to(rank))
             print("input ids:", input_ids.shape)
             attention_mask = torch.tensor(batch["attention_mask"].to(rank))
@@ -136,7 +138,7 @@ def train(rank, world_size):
             labels = input_ids.clone()  # Language modeling, labels are input_ids
 
             # Forward pass through the student model
-            student_outputs = student_model(input_ids, attention_mask=attention_mask, labels=input_ids)
+            student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
             student_logits = student_outputs.logits
 
             # Forward pass through the teacher model (no gradients)
