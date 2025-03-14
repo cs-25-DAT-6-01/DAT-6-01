@@ -136,7 +136,7 @@ def train(rank, world_size):
             labels = input_ids.clone()  # Language modeling, labels are input_ids
 
             # Forward pass through the student model
-            student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
+            student_outputs = student_model(input_ids, attention_mask=attention_mask, labels=input_ids)
             student_logits = student_outputs.logits
 
             # Forward pass through the teacher model (no gradients)
