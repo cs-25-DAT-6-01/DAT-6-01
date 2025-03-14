@@ -129,9 +129,9 @@ def train(rank, world_size):
         total_loss = 0
         for batch in train_dataloader:
 
-            input_ids = batch["input_ids"].to(rank)
+            input_ids = torch.tensor(batch["input_ids"].to(rank))
             print("input ids:", input_ids.shape)
-            attention_mask = batch["attention_mask"].to(rank)
+            attention_mask = torch.tensor(batch["attention_mask"].to(rank))
             print("attention mask:", attention_mask.shape)
             labels = input_ids.clone()  # Language modeling, labels are input_ids
 
