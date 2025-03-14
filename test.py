@@ -63,7 +63,7 @@ def tokenize_function(examples):
     return teacher_tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True, max_length=512)
 
 
-train_dataset = train_dataset.map(tokenize_function, batched=True, remove_columns=["text"], tqdm_class=tqdm)
+train_dataset = train_dataset.map(tokenize_function, batched=True, remove_columns=["text"])
 
 train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
