@@ -5,7 +5,6 @@ import torch
 import torch.nn.functional as F
 from datasets import load_dataset
 from torch.utils.data import DataLoader
-import math
 from huggingface_hub import login
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
@@ -50,9 +49,9 @@ def train(rank, world_size):
     login(os.getenv("HF_TOKEN"))
 
     print("GPU: ", rank)
-    print("Loading openai-community/gpt2-large")
-    # Load the pre-trained Qwen/Qwen2.5-0.5B model (teacher)
-    teacher_model_name = "openai-community/gpt2-large"
+    print("Loading Qwen/Qwen2.5-1.5B")
+    # Load the pre-trained Qwen/Qwen2.5-1.5B (teacher)
+    teacher_model_name = "Qwen/Qwen2.5-1.5B"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
@@ -188,8 +187,8 @@ def train(rank, world_size):
 
     print("Saving model")
     # Save the student model and tokenizer
-    student_model.module.save_pretrained("student_model")
-    student_tokenizer.save_pretrained("student_model")
+    student_model.module.save_pretrained(student_model_name)
+    student_tokenizer.save_pretrained(student_model_name)
     cleanup()
 
 
