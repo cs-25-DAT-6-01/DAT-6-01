@@ -9,6 +9,7 @@ import math
 from huggingface_hub import login
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
+from torcheval.metrics import Perplexity as Perplexity
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
@@ -69,6 +70,7 @@ def train(rank, world_size):
     # Example: Load a dataset like "wikitext"
     dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
     train_dataset = dataset["train"]
+    test_dataset = dataset["test"]
 
     # Tokenize the dataset
     def tokenize_function(examples):
@@ -90,13 +92,17 @@ def train(rank, world_size):
 
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
+    test_dataset = test_dataset.map(tokenize_function, batched=True)
 
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
+    test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
     train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
+    test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
 
     # DataLoader for the dataset
     train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
+    test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
@@ -128,12 +134,12 @@ def train(rank, world_size):
         total_loss = 0
         for batch in train_dataloader:
 
-            print("Batch size:", len(batch))
-            print("Batch:", batch)
+            # print("Batch size:", len(batch))
+            # print("Batch:", batch)
             input_ids = batch["input_ids"].to(rank)
-            print("input ids:", input_ids.shape)
+            # print("input ids:", input_ids.shape)
             attention_mask = batch["attention_mask"].to(rank)
-            print("attention mask:", attention_mask.shape)
+            # print("attention mask:", attention_mask.shape)
             labels = input_ids.clone().detach()  # Language modeling, labels are input_ids
 
             # Forward pass through the student model
@@ -162,19 +168,23 @@ def train(rank, world_size):
 
     print("Starting evaluation")
     with torch.no_grad():
-        eval_loss = 0
-        num_eval_batches = 0
-        for batch in train_dataloader:
+        for batch in test_dataloader:
+            perplexity_metric = Perplexity()
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
+            labels = input_ids.clone().detach()
 
+            # Forward pass through the student model
             outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=input_ids)
-            eval_loss += outputs.loss.item()
-            num_eval_batches += 1
+            print("Calculating log probs")
+            log_probs = F.log_softmax(outputs.logits, dim=-1)
+            print("Updating perplexity inputs")
+            perplexity_metric.update(logits=log_probs, labels=labels)
 
-        avg_eval_loss = eval_loss / num_eval_batches
-        perplexity = math.exp(avg_eval_loss)
-        print(f"Perplexity: {perplexity}")
+
+        print("Computing perplexity")
+        perplexity_score = perplexity_metric.compute()
+        print(f"Perplexity: {perplexity_score}")
 
     print("Saving model")
     # Save the student model and tokenizer
