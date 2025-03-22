@@ -129,7 +129,7 @@ def train(rank, world_size):
             attention_mask = batch["attention_mask"].to(rank)
             labels = input_ids.clone().detach()  # Language modeling, labels are input_ids
 
-            def custom_student_forward(*inputs):
+            def custom_student_forward(input_ids, attention_mask):
                 return student_model(input_ids=input_ids, attention_mask=attention_mask)
 
             # Forward pass through the student model
