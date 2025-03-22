@@ -119,14 +119,6 @@ def train(rank, world_size):
     else:
         raise RuntimeError("No GPU available")
 
-    # teacher_model = nn.DataParallel(teacher_model)
-    # student_model = nn.DataParallel(student_model)
-
-    # print("Moving to GPU")
-    # Move to device
-    # teacher_model.to(device)
-    # student_model.to(device)
-
     print("Memory usage", torch.cuda.memory_summary())
 
     num_epochs = 3
