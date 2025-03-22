@@ -136,12 +136,12 @@ def train(rank, world_size):
                 return teacher_model(input_ids=input_ids, attention_mask=attention_mask)
 
             # Forward pass through the student model
-            student_outputs = checkpoint.checkpoint(custom_student_forward(input_ids, attention_mask))
+            student_outputs = checkpoint.checkpoint(custom_student_forward,input_ids, attention_mask)
             student_logits = student_outputs.logits
 
             # Forward pass through the teacher model (no gradients)
             with torch.no_grad():
-                teacher_outputs = checkpoint.checkpoint(custom_teacher_forward(input_ids, attention_mask))
+                teacher_outputs = checkpoint.checkpoint(custom_teacher_forward,input_ids, attention_mask)
                 teacher_logits = teacher_outputs.logits
 
             # Calculate distillation loss
