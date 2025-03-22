@@ -85,16 +85,10 @@ def train(rank, world_size):
     print("Wrapping teacher in DDP")
     teacher_model.to(rank)
     teacher_model = DDP(teacher_model, device_ids=[rank])
-    # Checkpoint the teacher model
-    print("Checkpointing teacher model")
-    checkpoint.checkpoint(teacher_model, use_reentrant=False)
 
     print("Wrapping student in DDP")
     student_model.to(rank)
     student_model = DDP(student_model, device_ids=[rank])
-    # Checkpoint the student model
-    print("Checkpointing student model")
-    checkpoint.checkpoint(student_model, use_reentrant=False)
 
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
@@ -131,22 +125,23 @@ def train(rank, world_size):
 
         total_loss = 0
         for batch in train_dataloader:
-
-            # print("Batch size:", len(batch))
-            # print("Batch:", batch)
             input_ids = batch["input_ids"].to(rank)
-            # print("input ids:", input_ids.shape)
             attention_mask = batch["attention_mask"].to(rank)
-            # print("attention mask:", attention_mask.shape)
             labels = input_ids.clone().detach()  # Language modeling, labels are input_ids
 
+            def custom_student_forward(*inputs):
+                return student_model(*inputs)
+
+            def custom_teacher_forward(*inputs):
+                return teacher_model(*inputs)
+
             # Forward pass through the student model
-            student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
+            student_outputs = checkpoint.checkpoint(custom_student_forward, input_ids, attention_mask)
             student_logits = student_outputs.logits
 
             # Forward pass through the teacher model (no gradients)
             with torch.no_grad():
-                teacher_outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
+                teacher_outputs = checkpoint.checkpoint(custom_teacher_forward, input_ids, attention_mask)
                 teacher_logits = teacher_outputs.logits
 
             # Calculate distillation loss
