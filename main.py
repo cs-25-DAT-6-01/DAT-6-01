@@ -79,19 +79,21 @@ def train(rank, world_size):
 
     setup(rank, world_size)
 
-    # Set up the environment for distributed training
-    print("Wraps in DataParallel container")
     # Multiple gpus
     torch.cuda.set_device(rank)
 
+    print("Wrapping teacher in DDP")
     teacher_model.to(rank)
     teacher_model = DDP(teacher_model, device_ids=[rank])
     # Checkpoint the teacher model
+    print("Checkpointing teacher model")
     checkpoint.checkpoint(teacher_model)
 
+    print("Wrapping student in DDP")
     student_model.to(rank)
     student_model = DDP(student_model, device_ids=[rank])
     # Checkpoint the student model
+    print("Checkpointing student model")
     checkpoint.checkpoint(student_model)
 
     print("Starting tokenization")
