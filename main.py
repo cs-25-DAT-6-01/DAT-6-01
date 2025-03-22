@@ -125,8 +125,8 @@ def train(rank, world_size):
 
         total_loss = 0
         for batch in train_dataloader:
-            input_ids = batch["input_ids"].to(rank)
-            attention_mask = batch["attention_mask"].to(rank)
+            input_ids = batch["input_ids"].to(rank).requires_grad_(True)
+            attention_mask = batch["attention_mask"].to(rank).requires_grad_(True)
             labels = input_ids.clone().detach()  # Language modeling, labels are input_ids
 
             def custom_student_forward(input_ids, attention_mask):
