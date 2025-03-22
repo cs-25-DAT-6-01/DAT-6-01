@@ -87,14 +87,14 @@ def train(rank, world_size):
     teacher_model = DDP(teacher_model, device_ids=[rank])
     # Checkpoint the teacher model
     print("Checkpointing teacher model")
-    checkpoint.checkpoint(teacher_model)
+    checkpoint.checkpoint(teacher_model, use_reentrant=False)
 
     print("Wrapping student in DDP")
     student_model.to(rank)
     student_model = DDP(student_model, device_ids=[rank])
     # Checkpoint the student model
     print("Checkpointing student model")
-    checkpoint.checkpoint(student_model)
+    checkpoint.checkpoint(student_model, use_reentrant=False)
 
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
