@@ -9,6 +9,7 @@ from huggingface_hub import login
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 from torcheval.metrics import Perplexity as Perplexity
+from torch.utils import checkpoint
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
@@ -85,9 +86,13 @@ def train(rank, world_size):
 
     teacher_model.to(rank)
     teacher_model = DDP(teacher_model, device_ids=[rank])
+    # Checkpoint the teacher model
+    checkpoint.checkpoint(teacher_model)
 
     student_model.to(rank)
     student_model = DDP(student_model, device_ids=[rank])
+    # Checkpoint the student model
+    checkpoint.checkpoint(student_model)
 
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
