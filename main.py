@@ -170,7 +170,7 @@ def train(rank, world_size):
             print("Calculating log probs")
             log_probs = F.log_softmax(outputs.logits, dim=-1)
             print("Updating perplexity inputs")
-            perplexity_metric.update(logits=log_probs, labels=labels)
+            perplexity_metric.update(log_probs, labels)
 
 
         print("Computing perplexity")
