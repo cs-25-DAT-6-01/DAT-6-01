@@ -133,7 +133,7 @@ def train(rank, world_size):
                 return student_model(input_ids=input_ids, attention_mask=attention_mask)
 
             # Forward pass through the student model
-            student_outputs = checkpoint.checkpoint(custom_student_forward,input_ids, attention_mask)
+            student_outputs = checkpoint.checkpoint(custom_student_forward,input_ids, attention_mask, use_reentrant=False)
             student_logits = student_outputs.logits
 
             # Forward pass through the teacher model (no gradients)
@@ -168,7 +168,7 @@ def train(rank, world_size):
             # Forward pass through the student model
             outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=input_ids)
             print("Calculating log probs")
-            log_probs = F.log_softmax(outputs.logits, dim=-1)
+            log_probs = F.log_softmax(outputs.logits, dim=-1).to(device)
             print("Updating perplexity inputs")
             perplexity_metric.update(log_probs, labels)
 
