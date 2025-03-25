@@ -146,7 +146,7 @@ def train(rank, world_size):
 
             # Backward pass
             optimizer.zero_grad()
-            loss.requires_grad = True
+            loss.requires_grad_(True)
             loss.backward()
             optimizer.step()
 
