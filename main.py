@@ -107,12 +107,6 @@ def train(rank, world_size):
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
 
-    # Training loop
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    else:
-        raise RuntimeError("No GPU available")
-
     print("Memory usage", torch.cuda.memory_summary())
 
     num_epochs = 3
@@ -161,14 +155,14 @@ def train(rank, world_size):
     with torch.no_grad():
         for batch in test_dataloader:
             perplexity_metric = Perplexity()
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
+            input_ids = batch["input_ids"].to(rank)
+            attention_mask = batch["attention_mask"].to(rank)
             labels = input_ids.clone().detach()
 
             # Forward pass through the student model
             outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=input_ids)
             print("Calculating log probs")
-            log_probs = F.log_softmax(outputs.logits, dim=-1).to(device)
+            log_probs = F.log_softmax(outputs.logits, dim=-1).to(rank)
             print("Updating perplexity inputs")
             perplexity_metric.update(log_probs, labels)
 
