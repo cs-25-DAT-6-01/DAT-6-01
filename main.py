@@ -154,7 +154,7 @@ def train(rank, world_size):
     print("Starting evaluation")
     with torch.no_grad():
         for batch in test_dataloader:
-            perplexity_metric = Perplexity()
+            perplexity_metric = Perplexity().to(rank)
             input_ids = batch["input_ids"].to(rank)
             attention_mask = batch["attention_mask"].to(rank)
             labels = input_ids.clone().detach()
