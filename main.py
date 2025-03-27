@@ -101,15 +101,15 @@ def train(rank, world_size):
     test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
 
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
-    test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
+    train_dataloader = DataLoader(train_dataset, batch_size=32, sampler=train_sampler)
+    test_dataloader = DataLoader(test_dataset, batch_size=32, sampler=test_sampler)
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
 
     print("Memory usage", torch.cuda.memory_summary())
 
-    num_epochs = 3
+    num_epochs = 6
 
     print("Starting training")
     for epoch in range(num_epochs):
