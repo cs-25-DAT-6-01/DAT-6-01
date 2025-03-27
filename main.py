@@ -50,9 +50,9 @@ def train(rank, world_size):
     login(os.getenv("HF_TOKEN"))
 
     print("GPU: ", rank)
-    print("Loading openai-community/gpt2-large")
-    # Load the pre-trained openai-community/gpt2-large (teacher)
-    teacher_model_name = "openai-community/gpt2-large"
+    print("Loading openai-community/gpt2-xl")
+    # Load the pre-trained openai-community/gpt2-xl (teacher)
+    teacher_model_name = "openai-community/gpt2-xl"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
@@ -101,8 +101,8 @@ def train(rank, world_size):
     test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
 
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=32, sampler=train_sampler)
-    test_dataloader = DataLoader(test_dataset, batch_size=32, sampler=test_sampler)
+    train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
+    test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
