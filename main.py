@@ -50,9 +50,9 @@ def train(rank, world_size):
     login(os.getenv("HF_TOKEN"))
 
     print("GPU: ", rank)
-    print("Loading openai-community/gpt2-large")
-    # Load the pre-trained openai-community/gpt2-large (teacher)
-    teacher_model_name = "openai-community/gpt2-large"
+    print("Loading TinyLlama/TinyLlama_v1.1")
+    # Load the pre-trained TinyLlama/TinyLlama_v1.1 (teacher)
+    teacher_model_name = "TinyLlama/TinyLlama_v1.1"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
