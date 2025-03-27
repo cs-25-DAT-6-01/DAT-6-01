@@ -173,8 +173,8 @@ def train(rank, world_size):
 
     print("Saving model")
     # Save the student model and tokenizer
-    student_model.module.save_pretrained(f"model-{student_model_name}_epochs-{num_epochs}")
-    student_tokenizer.save_pretrained(f"model-{student_model_name}_epochs-{num_epochs}")
+    student_model.module.save_pretrained(f"model-{student_model_name}-epochs-{num_epochs}")
+    student_tokenizer.save_pretrained(f"model-{student_model_name}-epochs-{num_epochs}")
     cleanup()
 
 
