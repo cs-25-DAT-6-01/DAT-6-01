@@ -50,9 +50,9 @@ def train(rank, world_size):
     login(os.getenv("HF_TOKEN"))
 
     print("GPU: ", rank)
-    print("Loading Qwen/Qwen2.5-1.5B")
-    # Load the pre-trained Qwen/Qwen2.5-1.5B (teacher)
-    teacher_model_name = "Qwen/Qwen2.5-1.5B"
+    print("Loading openai-community/gpt2-xl")
+    # Load the pre-trained openai-community/gpt2-xl (teacher)
+    teacher_model_name = "openai-community/gpt2-xl"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
