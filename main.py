@@ -50,9 +50,9 @@ def train(rank, world_size):
     login(os.getenv("HF_TOKEN"))
 
     print("GPU: ", rank)
-    print("Loading TinyLlama/TinyLlama_v1.1")
-    # Load the pre-trained TinyLlama/TinyLlama_v1.1 (teacher)
-    teacher_model_name = "TinyLlama/TinyLlama_v1.1"
+    print("Loading Qwen/Qwen2.5-1.5B")
+    # Load the pre-trained Qwen/Qwen2.5-1.5B (teacher)
+    teacher_model_name = "Qwen/Qwen2.5-1.5B"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
