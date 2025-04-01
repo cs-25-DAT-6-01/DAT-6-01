@@ -28,10 +28,10 @@ start_time = time.time()
 inputs = tokenizer.encode_plus(
     input_text,
     return_tensors="pt",
-    padding="max_length",
-    truncation=True,
+    #padding="max_length",
+    #truncation=True,
     max_length=150,
-    pad_to_max_length=True,
+    #pad_to_max_length=True,
 )
 
 input_ids = inputs["input_ids"].to(device)
@@ -44,7 +44,7 @@ output = model.generate(
     attention_mask=attention_mask,
     max_new_tokens=200,
     #temperature=0.7,
-    top_k=100,
+    #top_k=50,
     #top_p=0.9,
     repetition_penalty=1.2,
     #do_sample=True,
