@@ -11,8 +11,8 @@ model_path = f"model-{model_name}_epochs-{amount_of_epochs}"
 tokenizer_path = f"tokenizer-{model_name}_epochs-{amount_of_epochs}"
 
 # Load the model and tokenizer
-model = AutoModelForCausalLM.from_pretrained(model_path)
-tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
+tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 
 # Set the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
