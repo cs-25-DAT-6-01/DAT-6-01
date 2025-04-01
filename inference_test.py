@@ -26,10 +26,12 @@ start_time = time.time()
 
 # Tokenize the input text
 inputs = tokenizer.encode(input_text, return_tensors="pt").to(device)
+input_ids = inputs["input_ids"].to(device)
+attention_mask = inputs["attention_mask"].to(device)
 
 # Generate the output (prediction)
 # Max length is the maximum number of tokens to generate
-output = model.generate(inputs, max_length=150)
+output = model.generate(input_ids, attention_mask=attention_mask, max_length=150)
 
 # Decode the output
 generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
