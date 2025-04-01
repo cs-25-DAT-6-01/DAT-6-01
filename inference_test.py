@@ -25,7 +25,15 @@ input_text = "What is the capital of France?"
 start_time = time.time()
 
 # Tokenize the input text
-inputs = tokenizer.encode(input_text, return_tensors="pt").to(device)
+inputs = tokenizer.encode_plus(
+    input_text,
+    return_tensors="pt",
+    padding="max_length",
+    truncation=True,
+    max_length=150,
+    pad_to_max_length=True,
+)
+
 input_ids = inputs["input_ids"].to(device)
 attention_mask = inputs["attention_mask"].to(device)
 
