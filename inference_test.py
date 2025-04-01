@@ -46,7 +46,7 @@ output = model.generate(
     #temperature=0.7,
     #top_k=50,
     #top_p=0.9,
-    repetition_penalty=1.2,
+    repetition_penalty=0.8,
     #do_sample=True,
 )
 
