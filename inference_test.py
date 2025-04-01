@@ -28,9 +28,9 @@ start_time = time.time()
 inputs = tokenizer.encode_plus(
     input_text,
     return_tensors="pt",
-    padding=True,
+    padding="max_length",
     #truncation=True,
-    #max_length=150,
+    max_length=150,
     #pad_to_max_length=True,
 )
 
