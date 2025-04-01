@@ -8,7 +8,7 @@ amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
 model_path = f"model-{model_name}_epochs-{amount_of_epochs}"
-tokenizer_path = f"tokenizer-{model_name}_epochs-{amount_of_epochs}"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}"
 
 # Load the model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
