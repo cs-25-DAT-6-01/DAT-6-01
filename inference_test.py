@@ -30,7 +30,7 @@ inputs = tokenizer.encode_plus(
     return_tensors="pt",
     padding="max_length",
     truncation=True,
-    max_length=150,
+    #max_length=150,
     pad_to_max_length=True,
 )
 
@@ -38,14 +38,16 @@ input_ids = inputs["input_ids"].to(device)
 attention_mask = inputs["attention_mask"].to(device)
 
 # Generate the output (prediction)
+# https://huggingface.co/docs/transformers//generation_strategies#generation-strategies
 output = model.generate(
     input_ids,
     attention_mask=attention_mask,
-    max_new_tokens=100,
-    temperature=0.7,
+    #max_new_tokens=100,
+    #temperature=0.7,
     top_k=50,
-    top_p=0.9,
-    repetition_penalty=1.2
+    #top_p=0.9,
+    repetition_penalty=1.2,
+    num_beams=3,
 )
 
 # Decode the output
