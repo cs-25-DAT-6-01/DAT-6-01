@@ -107,15 +107,9 @@ def train(rank, world_size):
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
 
-    # Training loop
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    else:
-        raise RuntimeError("No GPU available")
-
     print("Memory usage", torch.cuda.memory_summary())
 
-    num_epochs = 3
+    num_epochs = 6
 
     print("Starting training")
     for epoch in range(num_epochs):
@@ -160,15 +154,15 @@ def train(rank, world_size):
     print("Starting evaluation")
     with torch.no_grad():
         for batch in test_dataloader:
-            perplexity_metric = Perplexity()
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
+            perplexity_metric = Perplexity().to(rank)
+            input_ids = batch["input_ids"].to(rank)
+            attention_mask = batch["attention_mask"].to(rank)
             labels = input_ids.clone().detach()
 
             # Forward pass through the student model
             outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=input_ids)
             print("Calculating log probs")
-            log_probs = F.log_softmax(outputs.logits, dim=-1).to(device)
+            log_probs = F.log_softmax(outputs.logits, dim=-1).to(rank)
             print("Updating perplexity inputs")
             perplexity_metric.update(log_probs, labels)
 
@@ -179,8 +173,9 @@ def train(rank, world_size):
 
     print("Saving model")
     # Save the student model and tokenizer
-    student_model.module.save_pretrained(f"model-{student_model_name}_epochs-{num_epochs}")
-    student_tokenizer.save_pretrained(f"model-{student_model_name}_epochs-{num_epochs}")
+    model_name = student_model_name.replace("/", "-")
+    student_model.module.save_pretrained(f"model-{model_name}_epochs-{num_epochs}")
+    student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}")
     cleanup()
 
 
