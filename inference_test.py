@@ -43,11 +43,11 @@ output = model.generate(
     input_ids,
     attention_mask=attention_mask,
     max_new_tokens=100,
-    temperature=0.7,
+    #temperature=0.7,
     top_k=50,
-    top_p=0.9,
+    #top_p=0.9,
     repetition_penalty=1.2,
-    do_sample=True
+    #do_sample=True
 )
 
 # Decode the output
