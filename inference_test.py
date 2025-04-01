@@ -3,7 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
 # Define file name and such
-model_name = "openai-community/gpt2-large"
+model_name = "openai-community-gpt2-large"
 amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
