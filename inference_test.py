@@ -47,7 +47,8 @@ output = model.generate(
     #top_k=50,
     #top_p=0.9,
     repetition_penalty=1.2,
-    do_sample=False
+    do_sample=False,
+    eos_token_id=None
 )
 
 # Decode the output
