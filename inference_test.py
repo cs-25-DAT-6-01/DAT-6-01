@@ -29,7 +29,7 @@ inputs = tokenizer.encode_plus(
     input_text,
     return_tensors="pt",
     #padding="max_length",
-    #truncation=True,
+    truncation=True,
     max_length=150,
     #pad_to_max_length=True,
 )
