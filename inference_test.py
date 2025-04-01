@@ -19,7 +19,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
 # Input text
-input_text = "What is the capital of France?"
+input_text = "How many people live in New York City?"
 
 # Start time
 start_time = time.time()
