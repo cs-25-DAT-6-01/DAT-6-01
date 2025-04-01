@@ -47,7 +47,6 @@ output = model.generate(
     top_k=50,
     #top_p=0.9,
     repetition_penalty=1.2,
-    num_beams=3,
 )
 
 # Decode the output
