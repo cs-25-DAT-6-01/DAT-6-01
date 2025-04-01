@@ -29,8 +29,7 @@ inputs = tokenizer.encode(input_text, return_tensors="pt").to(device)
 
 # Generate the output (prediction)
 # Max length is the maximum number of tokens to generate
-# num_return_sequences is the number of different sequences to generate
-output = model.generate(inputs, max_length=100, num_return_sequences=3)
+output = model.generate(inputs, max_length=150)
 
 # Decode the output
 generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
