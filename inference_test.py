@@ -42,9 +42,9 @@ attention_mask = inputs["attention_mask"].to(device)
 output = model.generate(
     input_ids,
     attention_mask=attention_mask,
-    max_new_tokens=50,
+    max_new_tokens=200,
     #temperature=0.7,
-    top_k=50,
+    top_k=10,
     #top_p=0.9,
     repetition_penalty=1.2,
     #do_sample=True,
