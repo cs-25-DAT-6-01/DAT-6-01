@@ -38,14 +38,14 @@ input_ids = inputs["input_ids"].to(device)
 attention_mask = inputs["attention_mask"].to(device)
 
 # Generate the output (prediction)
-# Max length is the maximum number of tokens to generate
 output = model.generate(
     input_ids,
     attention_mask=attention_mask,
     max_new_tokens=50,
     temperature=0.7,
     top_k=50,
-    top_p=0.9
+    top_p=0.9,
+    repetition_penalty=1.2
 )
 
 # Decode the output
