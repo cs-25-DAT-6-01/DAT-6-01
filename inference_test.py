@@ -30,7 +30,7 @@ inputs = tokenizer.encode_plus(
     return_tensors="pt",
     padding="max_length",
     truncation=True,
-    max_length=300,
+    max_length=150,
     pad_to_max_length=True,
 )
 
@@ -42,7 +42,7 @@ attention_mask = inputs["attention_mask"].to(device)
 output = model.generate(
     input_ids,
     attention_mask=attention_mask,
-    max_new_tokens=200,
+    max_new_tokens=30,
     #temperature=0.7,
     top_k=50,
     #top_p=0.9,
