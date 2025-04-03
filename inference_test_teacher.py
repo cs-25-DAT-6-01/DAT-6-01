@@ -1,7 +1,11 @@
 import time
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+import os
+from huggingface_hub import login
 
+
+login(os.getenv("HF_TOKEN"))
 # Define file name and such
 model_name = "openai-community/gpt2-large"
 
