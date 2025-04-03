@@ -22,7 +22,7 @@ def cleanup():
     dist.destroy_process_group()
 
 
-def distillation_loss(student_logits, teacher_logits, true_labels, T=2.0, alpha=0.7):
+def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
     """
     Computes the knowledge distillation loss.
 
@@ -136,7 +136,7 @@ def train(rank, world_size):
                 teacher_logits = teacher_outputs.logits
 
             # Calculate distillation loss
-            loss = distillation_loss(student_logits, teacher_logits, labels, T=2.0, alpha=0.7)
+            loss = distillation_loss(student_logits, teacher_logits, labels, T=1.2, alpha=0.7)
 
             # Backward pass
             optimizer.zero_grad()
@@ -174,8 +174,8 @@ def train(rank, world_size):
     print("Saving model")
     # Save the student model and tokenizer
     model_name = student_model_name.replace("/", "-")
-    student_model.module.save_pretrained(f"model-{model_name}_epochs-{num_epochs}")
-    student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}")
+    student_model.module.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2")
+    student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2")
     cleanup()
 
 
