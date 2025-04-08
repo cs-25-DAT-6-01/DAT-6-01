@@ -26,8 +26,8 @@ bnb_config = BitsAndBytesConfig(
 # Load the model
 model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, quantization_config=bnb_config)
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
-tokenizer.pad_token = tokenizer.unk_token
-tokenizer.pad_token_id = tokenizer.unk_token_id
+tokenizer.pad_token = tokenizer.eos_token
+#tokenizer.pad_token_id = tokenizer.eos_token_id
 
 # Set the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -102,7 +102,7 @@ sft_config = SFTConfig(
     packing=True,
 
     ## GROUP 3: These are typical training parameters
-    num_train_epochs=10,
+    num_train_epochs=2,
     learning_rate=3e-4,
     # Optimizer
     # 8-bit Adam optimizer - doesn't help much if you're using LoRA!
