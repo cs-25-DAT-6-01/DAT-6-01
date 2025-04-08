@@ -8,7 +8,7 @@ amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
 model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning"
 
 # Load the model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
@@ -17,7 +17,6 @@ tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 # Set the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
-tokenizer.to(device)
 
 # Input text
 input_text = "What is New York City?"
