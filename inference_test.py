@@ -17,6 +17,7 @@ tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 # Set the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
+tokenizer.to(device)
 
 # Input text
 input_text = "What is New York City?"

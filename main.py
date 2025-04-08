@@ -107,7 +107,8 @@ def train(rank, world_size):
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
 
-    print("Memory usage", torch.cuda.memory_summary())
+    print("Memory usage (teacher)", teacher_model.get_memory_footprint()/1e6)
+    print("Memory usage (student)", student_model.get_memory_footprint()/1e6)
 
     num_epochs = 6
 
