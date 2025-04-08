@@ -20,7 +20,7 @@ model.to(device)
 tokenizer.to(device)
 
 # Input text
-input_text = "Cicely Mary Barker"
+input_text = "What is New York City?"
 print("Input text:", input_text)
 
 # Start time
