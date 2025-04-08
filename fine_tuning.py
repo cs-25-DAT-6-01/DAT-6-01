@@ -40,7 +40,7 @@ config = LoraConfig(
     lora_alpha = 32,
     bias =  "none",
     task_type = "CAUSAL_LM",
-    target_modules=['o_proj', 'qkv_proj', 'gate_up_proj', 'down_proj'],
+    target_modules=['c_attn', 'c_proj', 'c_fc', 'c_proj'],
 )
 
 model = get_peft_model(model, config)
