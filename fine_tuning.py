@@ -26,7 +26,7 @@ bnb_config = BitsAndBytesConfig(
 # Load the model
 model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, quantization_config=bnb_config)
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
-tokenizer.pad_token = tokenizer.eos_token
+#tokenizer.pad_token = tokenizer.eos_token
 #tokenizer.pad_token_id = tokenizer.eos_token_id
 
 # Set the device
