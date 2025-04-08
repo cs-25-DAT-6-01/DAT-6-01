@@ -47,7 +47,15 @@ model = get_peft_model(model, config)
 
 print("Loading wikitext dataset")
 # Example: Load a dataset like "wikitext"
-dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
+dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
+dataset = dataset["train"]
+
+# Tokenize the dataset
+def tokenize_function(examples):
+    return tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True,
+                             max_length=512)
+
+dataset = dataset.map(tokenize_function, batched=True)
 
 # SFTTrainer config
 sft_config = SFTConfig(
