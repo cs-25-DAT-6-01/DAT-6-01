@@ -7,8 +7,8 @@ model_name = "openai-community-gpt2"
 amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning"
 
 # Load the model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
@@ -34,7 +34,7 @@ inputs = tokenizer.encode_plus(
     #max_length=150,
     #pad_to_max_length=True,
 )
-print(inputs)
+
 input_ids = inputs["input_ids"].to(device)
 attention_mask = inputs["attention_mask"].to(device)
 
@@ -50,7 +50,7 @@ output = model.generate(
     repetition_penalty=1.3,
     #do_sample=True,
 )
-
+print(output)
 # Decode the output
 generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
 
