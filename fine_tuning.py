@@ -55,6 +55,7 @@ def tokenize_function(examples):
     return tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True,
                              max_length=512)
 
+print("Starting tokenization")
 dataset = dataset.map(tokenize_function, batched=True)
 
 # SFTTrainer config
@@ -93,6 +94,7 @@ sft_config = SFTConfig(
     report_to='none'
 )
 
+print("Creating trainer")
 # Create the trainer
 trainer = SFTTrainer(
     model=model,
@@ -101,5 +103,8 @@ trainer = SFTTrainer(
     args=sft_config,
 )
 
+print("Starting training")
 trainer.train()
+
+print("Training finished, saving model")
 trainer.save_model(f'{model_path}-fine_tuning')
