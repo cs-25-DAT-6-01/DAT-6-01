@@ -21,6 +21,7 @@ tokenizer.to(device)
 
 # Input text
 input_text = "Cicely Mary Barker"
+print("Input text:", input_text)
 
 # Start time
 start_time = time.time()
