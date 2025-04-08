@@ -1,9 +1,12 @@
+import nltk
 import torch
 import os
 from datasets import load_dataset
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from trl import SFTTrainer, SFTConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+import evaluate
+import numpy as np
 
 # Define file name and such
 model_name = "openai-community-gpt2"
@@ -48,7 +51,8 @@ model = get_peft_model(model, config)
 print("Loading wikitext dataset")
 # Example: Load a dataset like "wikitext"
 dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
-dataset = dataset["train"]
+train_dataset = dataset["train"]
+test_dataset = dataset["test"]
 
 # Tokenize the dataset
 def tokenize_function(examples):
@@ -56,7 +60,24 @@ def tokenize_function(examples):
                              max_length=512)
 
 print("Starting tokenization")
-dataset = dataset.map(tokenize_function, batched=True)
+train_dataset = train_dataset.map(tokenize_function, batched=True)
+
+rouge = evaluate.load("rouge")
+
+def compute_rouge(eval_pred):
+    print("Computing ROUGE")
+    predictions, labels = eval_pred
+    decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
+    # Replace -100 in the labels as we can't decode them.
+    labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
+    decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
+
+    # Rouge expects a newline after each sentence
+    decoded_preds = ["\n".join(nltk.sent_tokenize(pred.strip())) for pred in decoded_preds]
+    decoded_labels = ["\n".join(nltk.sent_tokenize(label.strip())) for label in decoded_labels]
+
+    result = rouge.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
+    return {key: value * 100 for key, value in result.items()}
 
 # SFTTrainer config
 sft_config = SFTConfig(
@@ -99,7 +120,9 @@ print("Creating trainer")
 trainer = SFTTrainer(
     model=model,
     processing_class=tokenizer,
-    train_dataset=dataset,
+    train_dataset=train_dataset,
+    eval_dataset=test_dataset,
+    compute_metrics=compute_rouge,
     args=sft_config,
 )
 
