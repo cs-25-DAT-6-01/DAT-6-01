@@ -7,8 +7,8 @@ model_name = "openai-community-gpt2"
 amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
 
 # Load the model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
