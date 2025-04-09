@@ -29,7 +29,7 @@ model.config.use_cache = False
 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 tokenizer.pad_token = tokenizer.eos_token
-#tokenizer.pad_token_id = tokenizer.eos_token_id
+tokenizer.pad_token_id = tokenizer.eos_token_id
 
 # Set the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
