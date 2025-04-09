@@ -92,15 +92,18 @@ sft_config = SFTConfig(
     gradient_checkpointing_kwargs={'use_reentrant': False},
     # Gradient Accumulation / Batch size
     # Actual batch (for updating) is same (1x) as micro-batch size
-    gradient_accumulation_steps=1,
+    gradient_accumulation_steps=2,
     # The initial (micro) batch size to start off with
-    per_device_train_batch_size=16,
+    per_device_train_batch_size=8,
     # If batch size would cause OOM, halves its size until it works
     auto_find_batch_size=True,
+    evaluation_strategy="steps",
+    eval_steps=50,
+    save_steps=100,
 
     ## GROUP 3: These are typical training parameters
     num_train_epochs=2,
-    learning_rate=3e-4,
+    learning_rate=5e-5,
     max_seq_length=100,
     # Optimizer
     # 8-bit Adam optimizer - doesn't help much if you're using LoRA!
@@ -130,3 +133,4 @@ trainer.train()
 
 print("Training finished, saving model")
 trainer.save_model(f'{model_path}-fine_tuning')
+tokenizer.save_pretrained(f'{model_path}-fine_tuning')

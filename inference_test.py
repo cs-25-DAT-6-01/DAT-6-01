@@ -50,12 +50,12 @@ attention_mask = inputs["attention_mask"].to(device)
 # https://huggingface.co/docs/transformers//generation_strategies#generation-strategies
 output = model.generate(
     input_ids,
-    attention_mask=attention_mask,
+    #attention_mask=attention_mask,
     max_new_tokens=250,
     #temperature=0.7,
     #top_k=50,
     #top_p=0.9,
-    repetition_penalty=1.3,
+    #repetition_penalty=1.3,
     #do_sample=True,
 )
 print(output)
