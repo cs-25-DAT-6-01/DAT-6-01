@@ -17,7 +17,7 @@ model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
 tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
 
 bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
+    load_in_4bit=False, #Testing this
     bnb_4bit_use_double_quant=True,
     bnb_4bit_quant_type="nf4",
     bnb_4bit_compute_dtype=torch.float32
@@ -41,8 +41,8 @@ print(model)
 model = prepare_model_for_kbit_training(model)
 
 peft_config = LoraConfig(
-    r = 16,
-    lora_alpha = 32,
+    r = 8, # LoRA rank (higher = more aggressive)
+    lora_alpha = 16,
     bias =  "none",
     task_type = "CAUSAL_LM",
     target_modules=['c_attn', 'c_proj', 'c_fc', 'c_proj'],
@@ -87,7 +87,7 @@ sft_config = SFTConfig(
     ## GROUP 1: Memory usage
     # These arguments will squeeze the most out of your GPU's RAM
     # Checkpointing
-    gradient_checkpointing=True,  # this saves a LOT of memory
+    gradient_checkpointing=False,  # this saves a LOT of memory
     # Set this to avoid exceptions in newer versions of PyTorch
     gradient_checkpointing_kwargs={'use_reentrant': False},
     # Gradient Accumulation / Batch size
@@ -102,7 +102,7 @@ sft_config = SFTConfig(
     save_steps=100,
 
     ## GROUP 3: These are typical training parameters
-    num_train_epochs=2,
+    num_train_epochs=1,
     learning_rate=5e-5,
     max_seq_length=100,
     # Optimizer

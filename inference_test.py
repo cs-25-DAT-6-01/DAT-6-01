@@ -25,6 +25,7 @@ tokenizer.pad_token = tokenizer.eos_token
 # Set the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
+model.eval()
 
 # Input text
 input_text = "What is New York City?"
