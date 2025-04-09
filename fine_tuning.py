@@ -97,6 +97,8 @@ sft_config = SFTConfig(
     per_device_train_batch_size=8,
     # If batch size would cause OOM, halves its size until it works
     auto_find_batch_size=True,
+    eval_steps=50,
+    save_steps=100,
 
     ## GROUP 3: These are typical training parameters
     num_train_epochs=1,
