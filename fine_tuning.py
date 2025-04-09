@@ -25,8 +25,10 @@ bnb_config = BitsAndBytesConfig(
 
 # Load the model
 model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, quantization_config=bnb_config)
+model.config.use_cache = False
+
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
-#tokenizer.pad_token = tokenizer.eos_token
+tokenizer.pad_token = tokenizer.eos_token
 #tokenizer.pad_token_id = tokenizer.eos_token_id
 
 # Set the device
@@ -38,7 +40,7 @@ print(model)
 
 model = prepare_model_for_kbit_training(model)
 
-config = LoraConfig(
+peft_config = LoraConfig(
     r = 16,
     lora_alpha = 32,
     bias =  "none",
@@ -46,7 +48,7 @@ config = LoraConfig(
     target_modules=['c_attn', 'c_proj', 'c_fc', 'c_proj'],
 )
 
-model = get_peft_model(model, config)
+#model = get_peft_model(model, config)
 
 print("Loading wikitext dataset")
 # Example: Load a dataset like "wikitext"
@@ -96,21 +98,16 @@ sft_config = SFTConfig(
     # If batch size would cause OOM, halves its size until it works
     auto_find_batch_size=True,
 
-    ## GROUP 2: Dataset-related
-    max_seq_length=64,
-    # Dataset
-    # packing a dataset means no padding is needed
-    packing=True,
-
     ## GROUP 3: These are typical training parameters
     num_train_epochs=2,
     learning_rate=3e-4,
+    max_seq_length=100,
     # Optimizer
     # 8-bit Adam optimizer - doesn't help much if you're using LoRA!
     optim='paged_adamw_8bit',
 
     ## GROUP 4: Logging parameters
-    logging_steps=10,
+    logging_steps=20,
     logging_dir='./logs',
     output_dir=f'./{model_path}-fine_tuning',
     report_to='none'
@@ -125,6 +122,7 @@ trainer = SFTTrainer(
     eval_dataset=test_dataset,
     compute_metrics=compute_rouge,
     args=sft_config,
+    peft_config=peft_config,
 )
 
 print("Starting training")

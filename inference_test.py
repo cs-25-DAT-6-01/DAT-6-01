@@ -1,4 +1,6 @@
 import time
+
+from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
@@ -7,12 +9,18 @@ model_name = "openai-community-gpt2"
 amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
+base_model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
 model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning"
 tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning"
 
 # Load the model and tokenizer
+base_model = AutoModelForCausalLM.from_pretrained(base_model_path, local_files_only=True)
 model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
+model = PeftModel.from_pretrained(base_model, model)
+model = model.merge_and_unload()
+
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
+tokenizer.pad_token = tokenizer.eos_token
 
 # Set the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
