@@ -10,11 +10,12 @@ import numpy as np
 
 # Define file name and such
 model_name = "openai-community-gpt2"
-amount_of_epochs = "6"
+distill_amount_of_epochs = "6"
+fine_tune_amount_of_epochs = "1"
 
 # Path to the trained model/tokenizer
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
+model_path = f"model-{model_name}_epochs-{distill_amount_of_epochs}_temperature-1.2"
+tokenizer_path = f"model-{model_name}_epochs-{distill_amount_of_epochs}_temperature-1.2"
 
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=False, #Testing this
@@ -132,5 +133,5 @@ print("Starting training")
 trainer.train()
 
 print("Training finished, saving model")
-trainer.save_model(f'{model_path}-fine_tuning')
-tokenizer.save_pretrained(f'{model_path}-fine_tuning')
+trainer.save_model(f'{model_path}-fine_tuning-{fine_tune_amount_of_epochs}')
+tokenizer.save_pretrained(f'{model_path}-fine_tuning-{fine_tune_amount_of_epochs}')
