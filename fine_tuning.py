@@ -4,7 +4,7 @@ import os
 from datasets import load_dataset
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from trl import SFTTrainer, SFTConfig
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer, TrainingArguments
 import evaluate
 import numpy as np
 
@@ -27,16 +27,10 @@ bnb_config = BitsAndBytesConfig(
 # Load the model
 #model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, quantization_config=bnb_config)
 model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
-model.config.use_cache = False
+model.config.pad_token_id = model.config.eos_token_id
 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 tokenizer.pad_token = tokenizer.eos_token
-tokenizer.pad_token_id = tokenizer.eos_token_id
-
-# Set the device
-print("Moving to gpu")
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
 
 print("Memory used (MBs):", model.get_memory_footprint()/1e6)
 print(model)
@@ -51,7 +45,12 @@ peft_config = LoraConfig(
     target_modules=['c_attn', 'c_proj', 'c_fc', 'c_proj'],
 )
 
-#model = get_peft_model(model, config)
+model = get_peft_model(model, peft_config)
+
+# Set the device
+print("Moving to gpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
 
 print("Loading wikitext dataset")
 # Example: Load a dataset like "wikitext"
@@ -86,33 +85,30 @@ def compute_rouge():
     return {key: value * 100 for key, value in result.items()}
 
 # SFTTrainer config
-sft_config = SFTConfig(
+training_args = TrainingArguments(
     ## GROUP 1: Memory usage
-    # These arguments will squeeze the most out of your GPU's RAM
     # Checkpointing
-    gradient_checkpointing=False,  # this saves a LOT of memory
+    gradient_checkpointing=True,  # this saves a LOT of memory
     # Set this to avoid exceptions in newer versions of PyTorch
     gradient_checkpointing_kwargs={'use_reentrant': False},
     # Gradient Accumulation / Batch size
     # Actual batch (for updating) is same (1x) as micro-batch size
     gradient_accumulation_steps=2,
-    # The initial (micro) batch size to start off with
-    per_device_train_batch_size=8,
-    # If batch size would cause OOM, halves its size until it works
     auto_find_batch_size=True,
-    eval_steps=50,
-    save_steps=100,
+    per_device_train_batch_size=8,
+    per_device_eval_batch_size=8,
 
     ## GROUP 3: These are typical training parameters
-    num_train_epochs=1,
+    num_train_epochs=2,
     learning_rate=5e-5,
     max_seq_length=100,
-    # Optimizer
-    # 8-bit Adam optimizer - doesn't help much if you're using LoRA!
-    optim='paged_adamw_8bit',
+    evaluation_strategy="steps",
+    eval_steps=500,
+    save_stragegy="epoch",
 
     ## GROUP 4: Logging parameters
-    logging_steps=20,
+    logging_strategy="steps",
+    logging_steps=10,
     logging_dir='./logs',
     output_dir=f'./{model_path}-fine_tuning',
     report_to='none'
@@ -120,14 +116,13 @@ sft_config = SFTConfig(
 
 print("Creating trainer")
 # Create the trainer
-trainer = SFTTrainer(
+trainer = Trainer(
     model=model,
     processing_class=tokenizer,
     train_dataset=train_dataset,
     eval_dataset=test_dataset,
     compute_metrics=compute_rouge,
-    #args=sft_config,
-    peft_config=peft_config,
+    args=training_args,
 )
 
 print("Starting training")
