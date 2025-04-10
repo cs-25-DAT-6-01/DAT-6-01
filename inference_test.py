@@ -15,9 +15,9 @@ tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-
 
 # Load the model and tokenizer
 base_model = AutoModelForCausalLM.from_pretrained(base_model_path, local_files_only=True)
-#model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
-model = PeftModel.from_pretrained(base_model, model_path)
-model = model.merge_and_unload()
+model = AutoModelForCausalLM.from_pretrained(base_model_path, local_files_only=True)
+#model = PeftModel.from_pretrained(base_model, model_path)
+#model = model.merge_and_unload()
 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 tokenizer.pad_token = tokenizer.eos_token
