@@ -101,7 +101,7 @@ training_args = TrainingArguments(
     ## GROUP 3: These are typical training parameters
     num_train_epochs=2,
     learning_rate=5e-5,
-    max_seq_length=100,
+    #max_seq_length=100,
     evaluation_strategy="steps",
     eval_steps=500,
     save_stragegy="epoch",
