@@ -84,7 +84,7 @@ def compute_rouge():
     result = rouge.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
     return {key: value * 100 for key, value in result.items()}
 
-# SFTTrainer config
+# Trainer config
 training_args = TrainingArguments(
     ## GROUP 1: Memory usage
     # Checkpointing
@@ -102,9 +102,9 @@ training_args = TrainingArguments(
     num_train_epochs=2,
     learning_rate=5e-5,
     #max_seq_length=100,
-    evaluation_strategy="steps",
+    eval_strategy="steps",
     eval_steps=500,
-    save_stragegy="epoch",
+    save_strategy="epoch",
 
     ## GROUP 4: Logging parameters
     logging_strategy="steps",
