@@ -25,6 +25,9 @@ tokenizer.pad_token = tokenizer.eos_token
 # Set the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
+
+print(model)
+print("Memory used (MBs):", model.get_memory_footprint() / 1e6)
 model.eval()
 
 # Input text

@@ -18,7 +18,7 @@ model_path = f"model-{model_name}_epochs-{distill_amount_of_epochs}_temperature-
 tokenizer_path = f"model-{model_name}_epochs-{distill_amount_of_epochs}_temperature-1.2"
 
 bnb_config = BitsAndBytesConfig(
-    load_in_4bit=False, #Testing this
+    load_in_4bit=False,
     bnb_4bit_use_double_quant=True,
     bnb_4bit_quant_type="nf4",
     bnb_4bit_compute_dtype=torch.float32
@@ -34,10 +34,11 @@ tokenizer.pad_token = tokenizer.eos_token
 tokenizer.pad_token_id = tokenizer.eos_token_id
 
 # Set the device
+print("Moving to gpu")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-print(model.get_memory_footprint()/1e6)
+print("Memory used (MBs):", model.get_memory_footprint()/1e6)
 print(model)
 
 model = prepare_model_for_kbit_training(model)
