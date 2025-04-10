@@ -10,7 +10,7 @@ amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
 base_model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning/checkpoint-1000"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning"
 tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning"
 
 # Load the model and tokenizer
