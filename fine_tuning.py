@@ -125,7 +125,7 @@ trainer = SFTTrainer(
     train_dataset=train_dataset,
     eval_dataset=test_dataset,
     compute_metrics=compute_rouge,
-    args=sft_config,
+    #args=sft_config,
     peft_config=peft_config,
 )
 
