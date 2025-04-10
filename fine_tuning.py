@@ -3,7 +3,7 @@ import torch
 import os
 from datasets import load_dataset
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-from trl import SFTTrainer, SFTConfig
+#from trl import SFTTrainer, SFTConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer, TrainingArguments
 import evaluate
 import numpy as np
@@ -42,7 +42,7 @@ peft_config = LoraConfig(
     lora_alpha = 16,
     bias =  "none",
     task_type = "CAUSAL_LM",
-    target_modules=['c_attn', 'c_proj', 'c_fc', 'c_proj'],
+    #target_modules=['c_attn', 'c_proj', 'c_fc', 'c_proj'],
 )
 
 model = get_peft_model(model, peft_config)
