@@ -69,7 +69,7 @@ test_dataset = test_dataset.map(tokenize_function, batched=True)
 
 rouge = evaluate.load("rouge")
 
-def compute_rouge(eval_pred):
+def compute_rouge():
     print("Computing ROUGE")
     predictions, labels = eval_pred
     decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
