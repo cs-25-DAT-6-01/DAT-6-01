@@ -24,7 +24,8 @@ bnb_config = BitsAndBytesConfig(
 )
 
 # Load the model
-model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, quantization_config=bnb_config)
+#model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, quantization_config=bnb_config)
+model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
 model.config.use_cache = False
 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
