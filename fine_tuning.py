@@ -32,8 +32,7 @@ model.config.pad_token_id = model.config.eos_token_id
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 tokenizer.pad_token = tokenizer.eos_token
 
-print("Memory used (MBs):", model.get_memory_footprint()/1e6)
-print(model)
+
 
 model = prepare_model_for_kbit_training(model)
 
@@ -51,6 +50,8 @@ model = get_peft_model(model, peft_config)
 print("Moving to gpu")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
+print("Memory used (MBs):", model.get_memory_footprint()/1e6)
+print(model)
 
 print("Loading wikitext dataset")
 # Example: Load a dataset like "wikitext"
@@ -95,15 +96,16 @@ def compute_rouge():
 training_args = TrainingArguments(
     ## GROUP 1: Memory usage
     # Checkpointing
-    gradient_checkpointing=True,  # this saves a LOT of memory
+    gradient_checkpointing=False,  # this saves a LOT of memory
     # Set this to avoid exceptions in newer versions of PyTorch
     gradient_checkpointing_kwargs={'use_reentrant': False},
     # Gradient Accumulation / Batch size
     # Actual batch (for updating) is same (1x) as micro-batch size
     gradient_accumulation_steps=2,
     auto_find_batch_size=True,
-    per_device_train_batch_size=8,
-    per_device_eval_batch_size=8,
+    per_device_train_batch_size=4,
+    per_device_eval_batch_size=4,
+    fp16=True,
 
     ## GROUP 3: These are typical training parameters
     num_train_epochs=2,
