@@ -58,8 +58,15 @@ test_dataset = dataset["test"]
 
 # Tokenize the dataset
 def tokenize_function(examples):
-    return tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True,
-                             max_length=512)
+    tokenized = tokenizer(
+        examples['text'],
+        return_tensors="pt",
+        padding="max_length",
+        truncation=True,
+        max_length=512
+    )
+    tokenized['labels'] = tokenized['input_ids'].clone()
+    return tokenized
 
 print("Starting tokenization")
 train_dataset = train_dataset.map(tokenize_function, batched=True)
