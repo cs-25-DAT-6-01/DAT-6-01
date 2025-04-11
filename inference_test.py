@@ -10,8 +10,8 @@ amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
 base_model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning/checkpoint-1000"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning-1"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning-1"
 
 # Load the model and tokenizer
 base_model = AutoModelForCausalLM.from_pretrained(base_model_path, local_files_only=True)
@@ -25,6 +25,9 @@ tokenizer.pad_token = tokenizer.eos_token
 # Set the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
+
+print(model)
+print("Memory used (MBs):", model.get_memory_footprint() / 1e6)
 model.eval()
 
 # Input text
