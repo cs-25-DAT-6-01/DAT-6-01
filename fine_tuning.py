@@ -18,15 +18,15 @@ model_path = f"model-{model_name}_epochs-{distill_amount_of_epochs}_temperature-
 tokenizer_path = f"model-{model_name}_epochs-{distill_amount_of_epochs}_temperature-1.2"
 
 bnb_config = BitsAndBytesConfig(
-    load_in_4bit=False,
+    load_in_4bit=True,
     bnb_4bit_use_double_quant=True,
     bnb_4bit_quant_type="nf4",
     bnb_4bit_compute_dtype=torch.float32
 )
 
 # Load the model
-#model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, quantization_config=bnb_config)
-model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
+model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, quantization_config=bnb_config)
+#model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
 model.config.pad_token_id = model.config.eos_token_id
 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
