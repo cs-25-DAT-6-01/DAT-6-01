@@ -4,7 +4,8 @@ import os
 from datasets import load_dataset
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 #from trl import SFTTrainer, SFTConfig
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer, TrainingArguments
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, Trainer, TrainingArguments, \
+    default_data_collator
 import evaluate
 import numpy as np
 
@@ -25,8 +26,8 @@ bnb_config = BitsAndBytesConfig(
 )
 
 # Load the model
-model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, quantization_config=bnb_config)
-#model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
+#model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, quantization_config=bnb_config)
+model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
 model.config.pad_token_id = model.config.eos_token_id
 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
@@ -39,6 +40,7 @@ model = prepare_model_for_kbit_training(model)
 peft_config = LoraConfig(
     r = 8, # LoRA rank (higher = more aggressive)
     lora_alpha = 16,
+    lora_dropout= 0.05,
     bias =  "none",
     task_type = "CAUSAL_LM",
     #target_modules=['c_attn', 'c_proj', 'c_fc', 'c_proj'],
@@ -66,7 +68,7 @@ def tokenize_function(examples):
         return_tensors="pt",
         padding="max_length",
         truncation=True,
-        max_length=256
+        max_length=512
     )
     tokenized['labels'] = tokenized['input_ids'].clone()
     return tokenized
@@ -75,9 +77,8 @@ print("Starting tokenization")
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 test_dataset = test_dataset.map(tokenize_function, batched=True)
 
-rouge = evaluate.load("rouge")
-
 def compute_rouge(eval_pred):
+    rouge = evaluate.load("rouge")
     print("Computing ROUGE")
     predictions, labels = eval_pred
     decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
@@ -101,7 +102,7 @@ training_args = TrainingArguments(
     gradient_checkpointing_kwargs={'use_reentrant': False},
     # Gradient Accumulation / Batch size
     # Actual batch (for updating) is same (1x) as micro-batch size
-    gradient_accumulation_steps=1,
+    gradient_accumulation_steps=2,
     auto_find_batch_size=True,
     per_device_train_batch_size=2,
     per_device_eval_batch_size=2,
@@ -129,6 +130,7 @@ trainer = Trainer(
     processing_class=tokenizer,
     train_dataset=train_dataset,
     eval_dataset=test_dataset,
+    data_collator=default_data_collator,
     compute_metrics=compute_rouge,
     args=training_args,
 )
