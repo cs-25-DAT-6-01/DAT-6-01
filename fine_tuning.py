@@ -66,7 +66,7 @@ def tokenize_function(examples):
         return_tensors="pt",
         padding="max_length",
         truncation=True,
-        max_length=512
+        max_length=256
     )
     tokenized['labels'] = tokenized['input_ids'].clone()
     return tokenized
@@ -77,7 +77,7 @@ test_dataset = test_dataset.map(tokenize_function, batched=True)
 
 rouge = evaluate.load("rouge")
 
-def compute_rouge():
+def compute_rouge(eval_pred):
     print("Computing ROUGE")
     predictions, labels = eval_pred
     decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
@@ -101,11 +101,10 @@ training_args = TrainingArguments(
     gradient_checkpointing_kwargs={'use_reentrant': False},
     # Gradient Accumulation / Batch size
     # Actual batch (for updating) is same (1x) as micro-batch size
-    gradient_accumulation_steps=2,
+    gradient_accumulation_steps=1,
     auto_find_batch_size=True,
-    per_device_train_batch_size=4,
-    per_device_eval_batch_size=4,
-    fp16=True,
+    per_device_train_batch_size=2,
+    per_device_eval_batch_size=2,
 
     ## GROUP 3: These are typical training parameters
     num_train_epochs=2,
