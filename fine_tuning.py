@@ -33,8 +33,6 @@ model.config.pad_token_id = model.config.eos_token_id
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 tokenizer.pad_token = tokenizer.eos_token
 
-
-
 model = prepare_model_for_kbit_training(model)
 
 peft_config = LoraConfig(
@@ -77,10 +75,16 @@ print("Starting tokenization")
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 test_dataset = test_dataset.map(tokenize_function, batched=True)
 
+
+def preprocess_logits_for_metric(logits, labels):
+    pred_ids = torch.argmax(logits, dim=-1)
+    return pred_ids, labels
+
 def compute_rouge(eval_pred):
     rouge = evaluate.load("rouge")
     print("Computing ROUGE")
     predictions, labels = eval_pred
+    predictions = predictions[0]
     decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)
     # Replace -100 in the labels as we can't decode them.
     labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
@@ -91,7 +95,7 @@ def compute_rouge(eval_pred):
     decoded_labels = ["\n".join(nltk.sent_tokenize(label.strip())) for label in decoded_labels]
 
     result = rouge.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
-    return {key: value * 100 for key, value in result.items()}
+    return result
 
 # Trainer config
 training_args = TrainingArguments(
