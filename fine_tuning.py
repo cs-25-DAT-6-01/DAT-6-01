@@ -146,6 +146,8 @@ trainer = Trainer(
     compute_metrics=compute_rouge,
     preprocess_logits_for_metrics=preprocess_logits_for_metric,
     args=training_args,
+    #label_names=["labels"], //Test later if fine tune doesnt work
+    #tokenizer=tokenizer // See above
 )
 
 print("Starting training")
