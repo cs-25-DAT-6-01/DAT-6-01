@@ -50,6 +50,7 @@ output = model.generate(
     repetition_penalty=1.3,
     #do_sample=True,
     use_cache=False,
+    kv_cache=None,
 )
 
 # Decode the output
