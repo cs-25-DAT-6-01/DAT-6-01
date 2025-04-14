@@ -7,7 +7,7 @@ from huggingface_hub import login
 
 login(os.getenv("HF_TOKEN"))
 # Define file name and such
-model_name = "openai-community/gpt2"
+model_name = "openai-community/gpt2-large"
 
 # Load the model and tokenizer
 tokenizer = AutoTokenizer.from_pretrained(model_name)

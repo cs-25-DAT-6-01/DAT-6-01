@@ -74,6 +74,7 @@ def tokenize_function(examples):
 print("Starting tokenization")
 train_dataset = train_dataset.map(tokenize_function, batched=True)
 test_dataset = test_dataset.map(tokenize_function, batched=True)
+print("Test dataset:", test_dataset)
 
 
 def preprocess_logits_for_metric(logits, labels):
