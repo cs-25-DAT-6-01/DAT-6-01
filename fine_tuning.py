@@ -56,8 +56,9 @@ print(model)
 print("Loading wikitext dataset")
 # Example: Load a dataset like "wikitext"
 dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
-train_dataset = dataset["train"]
-test_dataset = dataset["test"]
+column_names_train = list(dataset["train"].features)
+#train_dataset = dataset["train"]
+#test_dataset = dataset["test"]
 
 # Tokenize the dataset
 def tokenize_function(examples):
@@ -72,8 +73,11 @@ def tokenize_function(examples):
     return tokenized
 
 print("Starting tokenization")
-train_dataset = train_dataset.map(tokenize_function, batched=True)
-test_dataset = test_dataset.map(tokenize_function, batched=True)
+#train_dataset = train_dataset.map(tokenize_function, batched=True)
+#test_dataset = test_dataset.map(tokenize_function, batched=True)
+dataset = dataset.map(tokenize_function, remove_columns=column_names_train, batched=True)
+train_dataset = dataset["train"]
+test_dataset = dataset["test"]
 print("Test dataset:", test_dataset)
 
 
