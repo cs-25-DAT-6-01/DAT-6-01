@@ -9,6 +9,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import evaluate
 import numpy as np
 
+# Needed for rouge
+nltk.download('punkt_tab')
+
 # Define file name and such
 model_name = "openai-community-gpt2"
 distill_amount_of_epochs = "6"
