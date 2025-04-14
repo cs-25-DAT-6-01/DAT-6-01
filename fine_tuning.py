@@ -136,6 +136,7 @@ trainer = Trainer(
     eval_dataset=test_dataset,
     data_collator=default_data_collator,
     compute_metrics=compute_rouge,
+    preprocess_logits_for_metrics=preprocess_logits_for_metric,
     args=training_args,
 )
 
