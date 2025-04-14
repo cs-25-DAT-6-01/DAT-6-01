@@ -9,14 +9,14 @@ model_name = "openai-community-gpt2"
 amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
-base_model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning-1"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning-1"
+#base_model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
 
 # Load the model and tokenizer
-base_model = AutoModelForCausalLM.from_pretrained(base_model_path, local_files_only=True)
-#model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
-model = PeftModel.from_pretrained(base_model, model_path)
+#base_model = AutoModelForCausalLM.from_pretrained(base_model_path, local_files_only=True)
+model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
+#model = PeftModel.from_pretrained(base_model, model_path)
 model = model.merge_and_unload()
 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
@@ -55,7 +55,7 @@ attention_mask = inputs["attention_mask"].to(device)
 output = model.generate(
     input_ids,
     attention_mask=attention_mask,
-    max_new_tokens=250,
+    max_new_tokens=100,
     #temperature=0.7,
     #top_k=50,
     #top_p=0.9,
