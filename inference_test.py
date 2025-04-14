@@ -61,6 +61,7 @@ output = model.generate(
     #top_p=0.9,
     repetition_penalty=1.3,
     #do_sample=True,
+    use_cache=False,
 )
 print(output)
 # Decode the output
