@@ -153,6 +153,6 @@ trainer = Trainer(
 print("Starting training")
 trainer.train()
 
-print("Training finished, saving model")
-trainer.save_model(f'{model_path}-fine_tuning-{fine_tune_amount_of_epochs}')
-tokenizer.save_pretrained(f'{model_path}-fine_tuning-{fine_tune_amount_of_epochs}')
+#print("Training finished, saving model")
+#trainer.save_model(f'{model_path}-fine_tuning-{fine_tune_amount_of_epochs}')
+#tokenizer.save_pretrained(f'{model_path}-fine_tuning-{fine_tune_amount_of_epochs}')
