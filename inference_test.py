@@ -32,7 +32,7 @@ print("Memory used (MBs):", model.get_memory_footprint() / 1e6)
 model.eval()
 
 # Input text
-input_text = "What is New York City?"
+input_text = "Cicely Mary Barker"
 print("Input text:", input_text)
 
 # Tokenize the input text
@@ -73,7 +73,13 @@ generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
 end_time = time.time()
 inference_time = end_time - start_time
 
-reference_text = "" # This will need to be updated.
+reference_text = ("Cicely Mary Barker ( 28 June 1895 – 16 February 1973 ) "
+                  "was an English illustrator best known for a series of "
+                  "fantasy illustrations depicting fairies and flowers. "
+                  "Barker's art education began in girlhood with correspondence courses and "
+                  "instruction at the Croydon School of Art . Her earliest professional work "
+                  "included greeting cards and juvenile magazine illustrations, and her first book, "
+                  "Flower Fairies of the Spring, was published in 1923.") # This will need to be updated.
 
 scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
 scores = scorer.score(reference_text, generated_text)
