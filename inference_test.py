@@ -3,6 +3,7 @@ import time
 from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+from rouge_score import rouge_scorer
 
 # Define file name and such
 model_name = "openai-community-gpt2"
@@ -72,6 +73,14 @@ generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
 end_time = time.time()
 inference_time = end_time - start_time
 
+reference_text = "" # This will need to be updated.
+
+scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+scores = scorer.score(reference_text, generated_text)
+
 # Print the generated text and time taken
 print("Text generated:", generated_text)
 print("Inference time (seconds):", inference_time)
+print("ROUGE-1:", scores['rouge1'])
+print("ROUGE-2:", scores['rouge2'])
+print("ROUGE-L:", scores['rougeL'])
