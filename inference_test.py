@@ -9,15 +9,15 @@ model_name = "openai-community-gpt2"
 amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
-#base_model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
+base_model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning-1"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-fine_tuning-1"
 
-# Load the model and tokenizer // Commented out using finetuned model for now
-#base_model = AutoModelForCausalLM.from_pretrained(base_model_path, local_files_only=True)
-model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
-#model = PeftModel.from_pretrained(base_model, model_path)
-#model = model.merge_and_unload()
+# Load the model and tokenizer
+base_model = AutoModelForCausalLM.from_pretrained(base_model_path, local_files_only=True)
+#model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True)
+model = PeftModel.from_pretrained(base_model, model_path)
+model = model.merge_and_unload()
 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 tokenizer.pad_token = tokenizer.eos_token
@@ -34,9 +34,6 @@ model.eval()
 input_text = "What is New York City?"
 print("Input text:", input_text)
 
-# Start time
-start_time = time.time()
-
 # Tokenize the input text
 inputs = tokenizer.encode_plus(
     input_text,
@@ -49,6 +46,9 @@ inputs = tokenizer.encode_plus(
 
 input_ids = inputs["input_ids"].to(device)
 attention_mask = inputs["attention_mask"].to(device)
+
+# Start time
+start_time = time.time()
 
 # Generate the output (prediction)
 # https://huggingface.co/docs/transformers//generation_strategies#generation-strategies
