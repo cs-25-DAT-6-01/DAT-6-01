@@ -133,7 +133,7 @@ def train(rank, world_size):
                 teacher_logits = teacher_outputs.logits
 
             # Calculate distillation loss
-            loss = distillation_loss(student_logits, teacher_logits, labels, T=0.7, alpha=0.7)
+            loss = distillation_loss(student_logits, teacher_logits, labels, T=1.2, alpha=0.7)
 
             # Backward pass
             optimizer.zero_grad()
