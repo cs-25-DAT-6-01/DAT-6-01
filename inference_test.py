@@ -81,7 +81,7 @@ reference_text = ("Cicely Mary Barker ( 28 June 1895 – 16 February 1973 ) "
                   "included greeting cards and juvenile magazine illustrations, and her first book, "
                   "Flower Fairies of the Spring, was published in 1923.") # This will need to be updated.
 
-scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL', 'rougeLsum'], use_stemmer=True)
 scores = scorer.score(reference_text, generated_text)
 
 # Print the generated text and time taken
@@ -90,3 +90,4 @@ print("Inference time (seconds):", inference_time)
 print("ROUGE-1:", scores['rouge1'])
 print("ROUGE-2:", scores['rouge2'])
 print("ROUGE-L:", scores['rougeL'])
+print("ROUGE-Lsum:", scores['rougeLsum'])
