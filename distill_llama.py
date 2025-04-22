@@ -51,18 +51,8 @@ def train(rank, world_size):
     login(os.getenv("HF_TOKEN"))
     
     bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_use_double_quant=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype=torch.float16
-    )
-    
-    peft_config = LoraConfig(
-    r = 8, # LoRA rank (higher = more aggressive)
-    lora_alpha = 16,
-    lora_dropout= 0.05,
-    bias =  "none",
-    task_type = "CAUSAL_LM",
+    load_in_8bit=True,
+    llm_int8_enable_fp32_cpu_offload=True,
     )
 
     print("GPU: ", rank)
@@ -72,7 +62,7 @@ def train(rank, world_size):
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, quantization_config=bnb_config, device_map="auto")
+    teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, quantization_config=bnb_config, device_map="auto", torch_dtype="auto")
     teacher_model.config.pad_token_id = teacher_model.config.eos_token_id    
 
     print("Loading Llama-3.2-1B model")
@@ -81,10 +71,8 @@ def train(rank, world_size):
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
     student_tokenizer.pad_token = student_tokenizer.eos_token
     # student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    student_model = AutoModelForCausalLM.from_pretrained(student_model_name, quantization_config=bnb_config, device_map="auto")
+    student_model = AutoModelForCausalLM.from_pretrained(student_model_name, quantization_config=bnb_config, device_map="auto", torch_dtype="auto")
     student_model.config.pad_token_id = student_model.config.eos_token_id
-    student_model = prepare_model_for_kbit_training(student_model)
-    student_model = get_peft_model(student_model, peft_config)
 
     print("Loading wikitext dataset")
     # Example: Load a dataset like "wikitext"
