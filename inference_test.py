@@ -32,7 +32,7 @@ print("Memory used (MBs):", model.get_memory_footprint() / 1e6)
 model.eval()
 
 # Input text
-input_text = "Justin Bieber brother"  # Example input text
+input_text = "Cicely Mary Barker"
 print("Input text:", input_text)
 
 # Tokenize the input text
