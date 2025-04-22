@@ -12,16 +12,6 @@ from torcheval.metrics import Perplexity as Perplexity
 from torch.utils import checkpoint
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
-def setup(rank, world_size):
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
-
-    dist.init_process_group(rank=rank, world_size=world_size, backend='nccl')
-
-
-def cleanup():
-    dist.destroy_process_group()
-
 
 def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
     """
@@ -47,7 +37,7 @@ def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
     return alpha * ce_loss + (1 - alpha) * (T * T) * kl_loss
 
 
-def train(rank, world_size):
+def train():
     login(os.getenv("HF_TOKEN"))
     
     bnb_config = BitsAndBytesConfig(
@@ -55,7 +45,6 @@ def train(rank, world_size):
     llm_int8_enable_fp32_cpu_offload=True,
     )
 
-    print("GPU: ", rank)
     print("Loading Llama-3.1-8B model")
     # Load the pre-trained llama 8b (teacher)
     teacher_model_name = "meta-llama/Llama-3.1-8B"
@@ -94,19 +83,7 @@ def train(rank, world_size):
                                  max_length=512)
         inputs['labels'] = labels['input_ids']
         return inputs
-
-    setup(rank, world_size)
-
-    # Multiple gpus
-    torch.cuda.set_device(rank)
-
-    print("Wrapping teacher in DDP")
-    #teacher_model.to(rank)
-    teacher_model = DDP(teacher_model, device_ids=[rank])
-
-    print("Wrapping student in DDP")
-    #student_model.to(rank)
-    student_model = DDP(student_model, device_ids=[rank])
+    
 
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
@@ -115,12 +92,9 @@ def train(rank, world_size):
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
     test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
-    train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
-    test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
-
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
-    test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
+    train_dataloader = DataLoader(train_dataset, batch_size=4)
+    test_dataloader = DataLoader(test_dataset, batch_size=4)
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
@@ -128,16 +102,15 @@ def train(rank, world_size):
 
     print("Starting training")
     for epoch in range(num_epochs):
-        train_sampler.set_epoch(epoch)
         student_model.train()
         teacher_model.eval()  # Teacher model doesn't need gradient updates
 
         total_loss = 0
         for batch in train_dataloader:
             print(batch)
-            input_ids = batch["input_ids"].to(rank)
-            attention_mask = batch["attention_mask"].to(rank)
-            labels = batch["labels"].to(rank)
+            input_ids = batch["input_ids"]
+            attention_mask = batch["attention_mask"]
+            labels = batch["labels"]
 
             def custom_student_forward(input_ids, attention_mask):
                 return student_model(input_ids=input_ids, attention_mask=attention_mask)
@@ -170,15 +143,15 @@ def train(rank, world_size):
     print("Starting evaluation")
     with torch.no_grad():
         for batch in test_dataloader:
-            perplexity_metric = Perplexity().to(rank)
-            input_ids = batch["input_ids"].to(rank)
-            attention_mask = batch["attention_mask"].to(rank)
-            labels = batch["labels"].to(rank)
+            perplexity_metric = Perplexity()
+            input_ids = batch["input_ids"]
+            attention_mask = batch["attention_mask"]
+            labels = batch["labels"]
 
             # Forward pass through the student model
             outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=input_ids)
             print("Calculating log probs")
-            log_probs = F.log_softmax(outputs.logits, dim=-1).to(rank)
+            log_probs = F.log_softmax(outputs.logits, dim=-1)
             print("Updating perplexity inputs")
             perplexity_metric.update(log_probs, labels)
 
@@ -192,12 +165,10 @@ def train(rank, world_size):
     model_name = student_model_name.replace("/", "-")
     student_model.module.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2-webquestions")
     student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2-webquestions")
-    cleanup()
 
 
 def main():
-    world_size = torch.cuda.device_count()
-    torch.multiprocessing.spawn(train, args=(world_size,), nprocs=world_size, join=True)
+    train()
 
 
 if __name__ == "__main__":
