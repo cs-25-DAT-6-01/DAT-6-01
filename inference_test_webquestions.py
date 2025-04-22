@@ -32,7 +32,7 @@ print("Memory used (MBs):", model.get_memory_footprint() / 1e6)
 model.eval()
 
 # Input text
-input_text = "What is the name of Justin Bieber brother?" # https://huggingface.co/datasets/Stanford/web_questions
+input_text = "Justin Bieber brother" # https://huggingface.co/datasets/Stanford/web_questions
 print("Input text:", input_text)
 
 # Tokenize the input text
@@ -60,7 +60,7 @@ output = model.generate(
     #temperature=0.7,
     #top_k=50,
     #top_p=0.9,
-    repetition_penalty=1.1,
+    repetition_penalty=1.3,
     #do_sample=True,
     use_cache=False,
     kv_cache=None,
