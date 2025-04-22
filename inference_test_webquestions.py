@@ -73,7 +73,8 @@ generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
 end_time = time.time()
 inference_time = end_time - start_time
 
-reference_text = ("Jazmyn Bieber", "Jaxon Bieber") # This will need to be updated.
+reference_text = ("Jazmyn Bieber"
+                  "Jaxon Bieber") # This will need to be updated.
 
 scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL', 'rougeLsum'], use_stemmer=True)
 scores = scorer.score(reference_text, generated_text)
