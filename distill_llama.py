@@ -121,12 +121,13 @@ def train(rank, world_size):
 
         total_loss = 0
         for batch in train_dataloader:
-            print(batch)
             input_ids = batch["input_ids"].to(rank)
             attention_mask = batch["attention_mask"].to(rank)
             labels = batch["labels"].to(rank)
 
             def custom_student_forward(input_ids, attention_mask):
+                input_ids = input_ids.to(rank)
+                attention_mask = attention_mask.to(rank)
                 return student_model(input_ids=input_ids, attention_mask=attention_mask)
 
             # Forward pass through the student model
