@@ -11,8 +11,8 @@ amount_of_epochs = "6"
 
 # Path to the trained model/tokenizer
 # = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-webquestions"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2-webquestions"
 
 # Load the model and tokenizer
 #base_model = AutoModelForCausalLM.from_pretrained(base_model_path, local_files_only=True)
