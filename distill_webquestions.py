@@ -76,7 +76,7 @@ def train(rank, world_size):
     def tokenize_function(examples):
         inputs = teacher_tokenizer(examples['question'], return_tensors="pt", padding="max_length", truncation=True,
                                  max_length=512)
-        labels = teacher_tokenizer(examples['answer'], return_tensors="pt", padding="max_length", truncation=True,
+        labels = teacher_tokenizer(examples['answers'], return_tensors="pt", padding="max_length", truncation=True,
                                  max_length=512)
         inputs['labels'] = labels['input_ids']
         return inputs
