@@ -101,11 +101,11 @@ def train(rank, world_size):
     torch.cuda.set_device(rank)
 
     print("Wrapping teacher in DDP")
-    teacher_model.to(rank)
+    #teacher_model.to(rank)
     teacher_model = DDP(teacher_model, device_ids=[rank])
 
     print("Wrapping student in DDP")
-    student_model.to(rank)
+    #student_model.to(rank)
     student_model = DDP(student_model, device_ids=[rank])
 
     print("Starting tokenization")
