@@ -56,7 +56,7 @@ start_time = time.time()
 output = model.generate(
     input_ids,
     attention_mask=attention_mask,
-    max_new_tokens=20,
+    max_new_tokens=100,
     #temperature=0.7,
     #top_k=50,
     #top_p=0.9,
