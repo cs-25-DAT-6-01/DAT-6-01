@@ -108,9 +108,9 @@ def train():
         total_loss = 0
         for batch in train_dataloader:
             print(batch)
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
+            input_ids = batch["input_ids"].to(student_model.device)
+            attention_mask = batch["attention_mask"].to(student_model.device)
+            labels = batch["labels"].to(student_model.device)
 
             def custom_student_forward(input_ids, attention_mask):
                 return student_model(input_ids=input_ids, attention_mask=attention_mask)
@@ -143,15 +143,15 @@ def train():
     print("Starting evaluation")
     with torch.no_grad():
         for batch in test_dataloader:
-            perplexity_metric = Perplexity().to(device)
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
+            perplexity_metric = Perplexity().to(student_model.device)
+            input_ids = batch["input_ids"].to(student_model.device)
+            attention_mask = batch["attention_mask"].to(student_model.device)
+            labels = batch["labels"].to(student_model.device)
 
             # Forward pass through the student model
             outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=input_ids)
             print("Calculating log probs")
-            log_probs = F.log_softmax(outputs.logits, dim=-1).to(device)
+            log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_model.device)
             print("Updating perplexity inputs")
             perplexity_metric.update(log_probs, labels)
 
