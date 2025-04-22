@@ -103,9 +103,11 @@ def train(rank, world_size):
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
     test_dataset = test_dataset.map(tokenize_function, batched=True)
+    print(train_dataset)
 
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
     test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
+    print("Dataset after format", train_dataset)
 
     train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
     test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
