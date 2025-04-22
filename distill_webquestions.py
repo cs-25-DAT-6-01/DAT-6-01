@@ -126,7 +126,6 @@ def train(rank, world_size):
 
         total_loss = 0
         for batch in train_dataloader:
-            print(batch)
             input_ids = batch["input_ids"].to(rank)
             attention_mask = batch["attention_mask"].to(rank)
             labels = batch["labels"].to(rank)
