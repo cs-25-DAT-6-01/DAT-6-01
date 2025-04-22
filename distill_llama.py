@@ -72,7 +72,7 @@ def train(rank, world_size):
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, quantization_config=bnb_config)
+    teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, quantization_config=bnb_config, device_map="auto")
     teacher_model.config.pad_token_id = teacher_model.config.eos_token_id    
 
     print("Loading Llama-3.2-1B model")
@@ -81,7 +81,7 @@ def train(rank, world_size):
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
     student_tokenizer.pad_token = student_tokenizer.eos_token
     # student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    student_model = AutoModelForCausalLM.from_pretrained(student_model_name, quantization_config=bnb_config)
+    student_model = AutoModelForCausalLM.from_pretrained(student_model_name, quantization_config=bnb_config, device_map="auto")
     student_model.config.pad_token_id = student_model.config.eos_token_id
     student_model = prepare_model_for_kbit_training(student_model)
     student_model = get_peft_model(student_model, peft_config)
