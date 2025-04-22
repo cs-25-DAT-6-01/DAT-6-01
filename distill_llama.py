@@ -108,6 +108,7 @@ def train(rank, world_size):
     # DataLoader for the dataset
     train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
     test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
+    print(student_model.pretrained_model.hf_device_map)
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
@@ -131,7 +132,8 @@ def train(rank, world_size):
                 return student_model(input_ids=input_ids, attention_mask=attention_mask)
 
             # Forward pass through the student model
-            student_outputs = checkpoint.checkpoint(custom_student_forward,input_ids, attention_mask, use_reentrant=False)
+            #student_outputs = checkpoint.checkpoint(custom_student_forward,input_ids, attention_mask, use_reentrant=False)
+            student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
             student_logits = student_outputs.logits
 
             # Forward pass through the teacher model (no gradients)
