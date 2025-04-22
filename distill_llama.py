@@ -6,11 +6,8 @@ import torch.nn.functional as F
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 from huggingface_hub import login
-from torch.nn.parallel import DistributedDataParallel as DDP
-import torch.distributed as dist
 from torcheval.metrics import Perplexity as Perplexity
 from torch.utils import checkpoint
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
 
 def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
