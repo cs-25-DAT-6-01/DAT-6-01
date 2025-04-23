@@ -108,6 +108,9 @@ def train(rank, world_size):
     # DataLoader for the dataset
     train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
     test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
+    
+    student_first_device = list(student_model.hf_device_map.values())[0]
+    teacher_first_device = list(teacher_model.hf_device_map.values())[0]
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
@@ -121,9 +124,9 @@ def train(rank, world_size):
 
         total_loss = 0
         for batch in train_dataloader:
-            input_ids = batch["input_ids"].to("cuda:0")
-            attention_mask = batch["attention_mask"].to("cuda:0")
-            labels = batch["labels"].to("cuda:0")
+            input_ids = batch["input_ids"].to(student_first_device)
+            attention_mask = batch["attention_mask"].to(student_first_device)
+            labels = batch["labels"].to(student_first_device)
 
             def custom_student_forward(input_ids, attention_mask):
                 input_ids = input_ids.to(rank)
@@ -137,11 +140,11 @@ def train(rank, world_size):
 
             # Forward pass through the teacher model (no gradients)
             with torch.no_grad():
-                teacher_outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
+                teacher_outputs = teacher_model(input_ids=input_ids.to(teacher_first_device), attention_mask=attention_mask.to(teacher_first_device))
                 teacher_logits = teacher_outputs.logits
 
             # Calculate distillation loss
-            loss = distillation_loss(student_logits, teacher_logits, labels, T=1.2, alpha=0.7)
+            loss = distillation_loss(student_logits, teacher_logits.to(student_first_device), labels, T=1.2, alpha=0.7)
 
             # Backward pass
             optimizer.zero_grad()
@@ -159,15 +162,15 @@ def train(rank, world_size):
     print("Starting evaluation")
     with torch.no_grad():
         for batch in test_dataloader:
-            perplexity_metric = Perplexity().to(rank)
-            input_ids = batch["input_ids"].to(rank)
-            attention_mask = batch["attention_mask"].to(rank)
-            labels = batch["labels"].to(rank)
+            perplexity_metric = Perplexity().to(student_first_device)
+            input_ids = batch["input_ids"].to(student_first_device)
+            attention_mask = batch["attention_mask"].to(student_first_device)
+            labels = batch["labels"].to(student_first_device)
 
             # Forward pass through the student model
             outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=input_ids)
             print("Calculating log probs")
-            log_probs = F.log_softmax(outputs.logits, dim=-1).to(rank)
+            log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
             print("Updating perplexity inputs")
             perplexity_metric.update(log_probs, labels)
 
