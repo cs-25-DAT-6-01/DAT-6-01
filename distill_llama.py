@@ -108,7 +108,6 @@ def train(rank, world_size):
     # DataLoader for the dataset
     train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
     test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
-    print(student_model.hf_device_map)
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
@@ -122,9 +121,9 @@ def train(rank, world_size):
 
         total_loss = 0
         for batch in train_dataloader:
-            input_ids = batch["input_ids"].to(rank)
-            attention_mask = batch["attention_mask"].to(rank)
-            labels = batch["labels"].to(rank)
+            input_ids = batch["input_ids"].to("cuda:0")
+            attention_mask = batch["attention_mask"].to("cuda:0")
+            labels = batch["labels"].to("cuda:0")
 
             def custom_student_forward(input_ids, attention_mask):
                 input_ids = input_ids.to(rank)
