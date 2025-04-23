@@ -108,7 +108,7 @@ def train(rank, world_size):
     # DataLoader for the dataset
     train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
     test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
-    print(student_model.pretrained_model.hf_device_map)
+    print(student_model.hf_device_map)
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
