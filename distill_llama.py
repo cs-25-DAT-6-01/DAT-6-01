@@ -47,7 +47,7 @@ def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
     return alpha * ce_loss + (1 - alpha) * (T * T) * kl_loss
 
 
-def train(rank, world_size):
+def train():
     login(os.getenv("HF_TOKEN"))
     
     bnb_config = BitsAndBytesConfig(
@@ -55,7 +55,7 @@ def train(rank, world_size):
     llm_int8_enable_fp32_cpu_offload=True,
     )
 
-    print("GPU: ", rank)
+    #print("GPU: ", rank)
     print("Loading Llama-3.1-8B model")
     # Load the pre-trained llama 8b (teacher)
     teacher_model_name = "meta-llama/Llama-3.1-8B"
@@ -102,12 +102,14 @@ def train(rank, world_size):
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
     test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
-    train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
-    test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
+    #train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
+    #test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
 
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
-    test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
+    #train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
+    #test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
+    train_dataloader = DataLoader(train_dataset, batch_size=4)
+    test_dataloader = DataLoader(test_dataset, batch_size=4)
     
     student_first_device = list(student_model.hf_device_map.values())[0]
     teacher_first_device = list(teacher_model.hf_device_map.values())[0]
@@ -118,7 +120,7 @@ def train(rank, world_size):
 
     print("Starting training")
     for epoch in range(num_epochs):
-        train_sampler.set_epoch(epoch)
+        #train_sampler.set_epoch(epoch)
         student_model.train()
         teacher_model.eval()  # Teacher model doesn't need gradient updates
 
@@ -129,8 +131,8 @@ def train(rank, world_size):
             labels = batch["labels"].to(student_first_device)
 
             def custom_student_forward(input_ids, attention_mask):
-                input_ids = input_ids.to(rank)
-                attention_mask = attention_mask.to(rank)
+                #input_ids = input_ids.to(rank)
+                #attention_mask = attention_mask.to(rank)
                 return student_model(input_ids=input_ids, attention_mask=attention_mask)
 
             # Forward pass through the student model
@@ -188,8 +190,9 @@ def train(rank, world_size):
 
 
 def main():
-    world_size = torch.cuda.device_count()
-    torch.multiprocessing.spawn(train, args=(world_size,), nprocs=world_size, join=True)
+    #world_size = torch.cuda.device_count()
+    #torch.multiprocessing.spawn(train, args=(world_size,), nprocs=world_size, join=True)
+    train()
 
 
 if __name__ == "__main__":
