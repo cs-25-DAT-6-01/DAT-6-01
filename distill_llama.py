@@ -177,7 +177,7 @@ def train(rank, world_size):
     print("Saving model")
     # Save the student model and tokenizer
     model_name = student_model_name.replace("/", "-")
-    student_model.module.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2-webquestions")
+    student_model.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2-webquestions")
     student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2-webquestions")
     cleanup()
 
