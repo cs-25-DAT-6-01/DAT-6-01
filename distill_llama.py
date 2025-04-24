@@ -47,7 +47,7 @@ def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
     return alpha * ce_loss + (1 - alpha) * (T * T) * kl_loss
 
 
-def train(rank, world_size):
+def train():
     login(os.getenv("HF_TOKEN"))
     
     bnb_config = BitsAndBytesConfig(
@@ -55,7 +55,7 @@ def train(rank, world_size):
     llm_int8_enable_fp32_cpu_offload=True,
     )
 
-    print("GPU: ", rank)
+    #print("GPU: ", rank)
     print("Loading Llama-3.1-8B model")
     # Load the pre-trained llama 8b (teacher)
     teacher_model_name = "meta-llama/Llama-3.1-8B"
@@ -102,12 +102,17 @@ def train(rank, world_size):
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
     test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
-    train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
-    test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
+    #train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
+    #test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
 
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
-    test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
+    #train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
+    #test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
+    train_dataloader = DataLoader(train_dataset, batch_size=4)
+    test_dataloader = DataLoader(test_dataset, batch_size=4)
+    
+    student_first_device = list(student_model.hf_device_map.values())[0]
+    teacher_first_device = list(teacher_model.hf_device_map.values())[0]
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
@@ -115,31 +120,33 @@ def train(rank, world_size):
 
     print("Starting training")
     for epoch in range(num_epochs):
-        train_sampler.set_epoch(epoch)
+        #train_sampler.set_epoch(epoch)
         student_model.train()
         teacher_model.eval()  # Teacher model doesn't need gradient updates
 
         total_loss = 0
         for batch in train_dataloader:
-            print(batch)
-            input_ids = batch["input_ids"].to(rank)
-            attention_mask = batch["attention_mask"].to(rank)
-            labels = batch["labels"].to(rank)
+            input_ids = batch["input_ids"].to(student_first_device)
+            attention_mask = batch["attention_mask"].to(student_first_device)
+            labels = batch["labels"].to(student_first_device)
 
             def custom_student_forward(input_ids, attention_mask):
+                #input_ids = input_ids.to(rank)
+                #attention_mask = attention_mask.to(rank)
                 return student_model(input_ids=input_ids, attention_mask=attention_mask)
 
             # Forward pass through the student model
-            student_outputs = checkpoint.checkpoint(custom_student_forward,input_ids, attention_mask, use_reentrant=False)
+            #student_outputs = checkpoint.checkpoint(custom_student_forward,input_ids, attention_mask, use_reentrant=False)
+            student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
             student_logits = student_outputs.logits
 
             # Forward pass through the teacher model (no gradients)
             with torch.no_grad():
-                teacher_outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
+                teacher_outputs = teacher_model(input_ids=input_ids.to(teacher_first_device), attention_mask=attention_mask.to(teacher_first_device))
                 teacher_logits = teacher_outputs.logits
 
             # Calculate distillation loss
-            loss = distillation_loss(student_logits, teacher_logits, labels, T=1.2, alpha=0.7)
+            loss = distillation_loss(student_logits, teacher_logits.to(student_first_device), labels, T=1.2, alpha=0.7)
 
             # Backward pass
             optimizer.zero_grad()
@@ -157,15 +164,15 @@ def train(rank, world_size):
     print("Starting evaluation")
     with torch.no_grad():
         for batch in test_dataloader:
-            perplexity_metric = Perplexity().to(rank)
-            input_ids = batch["input_ids"].to(rank)
-            attention_mask = batch["attention_mask"].to(rank)
-            labels = batch["labels"].to(rank)
+            perplexity_metric = Perplexity().to(student_first_device)
+            input_ids = batch["input_ids"].to(student_first_device)
+            attention_mask = batch["attention_mask"].to(student_first_device)
+            labels = batch["labels"].to(student_first_device)
 
             # Forward pass through the student model
             outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=input_ids)
             print("Calculating log probs")
-            log_probs = F.log_softmax(outputs.logits, dim=-1).to(rank)
+            log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
             print("Updating perplexity inputs")
             perplexity_metric.update(log_probs, labels)
 
@@ -183,8 +190,9 @@ def train(rank, world_size):
 
 
 def main():
-    world_size = torch.cuda.device_count()
-    torch.multiprocessing.spawn(train, args=(world_size,), nprocs=world_size, join=True)
+    #world_size = torch.cuda.device_count()
+    #torch.multiprocessing.spawn(train, args=(world_size,), nprocs=world_size, join=True)
+    train()
 
 
 if __name__ == "__main__":
