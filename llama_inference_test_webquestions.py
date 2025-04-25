@@ -20,7 +20,7 @@ model = AutoModelForCausalLM.from_pretrained(model_path, local_files_only=True, 
 #model = PeftModel.from_pretrained(base_model, model_path)
 #model = model.merge_and_unload()
 
-tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
+tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True, device_map="auto")
 tokenizer.pad_token = tokenizer.eos_token
 
 # Set the device
@@ -45,8 +45,8 @@ inputs = tokenizer.encode_plus(
     #pad_to_max_length=True,
 )
 
-input_ids = inputs["input_ids"].to(device)
-attention_mask = inputs["attention_mask"].to(device)
+input_ids = inputs["input_ids"]
+attention_mask = inputs["attention_mask"]
 
 # Start time
 start_time = time.time()
