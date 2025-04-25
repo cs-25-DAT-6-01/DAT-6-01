@@ -1,30 +1,35 @@
 import time
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import torch
 import os
-from huggingface_hub import login
 from rouge_score import rouge_scorer
+from huggingface_hub import login
 
 
 login(os.getenv("HF_TOKEN"))
 # Define file name and such
-model_name = "openai-community/gpt2-large"
+model_name = "meta-llama/Llama-3.1-8B"
 
-# Load the model and tokenizer
+bnb_config = BitsAndBytesConfig(
+    load_in_8bit=True,
+    llm_int8_enable_fp32_cpu_offload=True,
+)
+
+model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", quantization_config=bnb_config, torch_dtype="auto")
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
-# teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-model = AutoModelForCausalLM.from_pretrained(model_name)
 
 # Set the device
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#model.to(device)
+
+print(model)
+print("Memory used (MBs):", model.get_memory_footprint() / 1e6)
+model.eval()
 
 # Input text
-input_text = "what is the name of justin bieber brother?"
-
-# Start time
-start_time = time.time()
+input_text = "what is the name of justin bieber brother?" # https://huggingface.co/datasets/Stanford/web_questions
+print("Input text:", input_text)
 
 # Tokenize the input text
 inputs = tokenizer.encode_plus(
@@ -36,8 +41,11 @@ inputs = tokenizer.encode_plus(
     #pad_to_max_length=True,
 )
 
-input_ids = inputs["input_ids"].to(device)
-attention_mask = inputs["attention_mask"].to(device)
+input_ids = inputs["input_ids"]
+attention_mask = inputs["attention_mask"]
+
+# Start time
+start_time = time.time()
 
 # Generate the output (prediction)
 # https://huggingface.co/docs/transformers//generation_strategies#generation-strategies
@@ -53,7 +61,7 @@ output = model.generate(
     use_cache=False,
     kv_cache=None,
 )
-
+print(output)
 # Decode the output
 generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
 
