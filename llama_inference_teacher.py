@@ -8,7 +8,7 @@ from huggingface_hub import login
 
 login(os.getenv("HF_TOKEN"))
 # Define file name and such
-model_name = "meta-llama-Llama-3.2-1B"
+model_name = "meta-llama/Llama-3.2-1B"
 
 bnb_config = BitsAndBytesConfig(
     load_in_8bit=True,
