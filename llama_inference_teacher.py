@@ -29,7 +29,7 @@ print("Memory used (MBs):", model.get_memory_footprint() / 1e6)
 model.eval()
 
 # Input text
-input_text = "what is the name of justin bieber brother?" # https://huggingface.co/datasets/Stanford/web_questions
+input_text = "Cicely Mary Barker" # https://huggingface.co/datasets/Stanford/web_questions
 print("Input text:", input_text)
 
 # Tokenize the input text
