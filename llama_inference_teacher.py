@@ -62,6 +62,7 @@ output = model.generate(
     use_cache=False,
     kv_cache=None,
 )
+torch.cuda.synchronize()  # Synchronize CUDA to ensure all operations are complete before measuring time
 # End time
 end_time = time.time()
 inference_time = end_time - start_time
