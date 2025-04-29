@@ -18,6 +18,7 @@ bnb_config = BitsAndBytesConfig(
 model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", quantization_config=bnb_config, torch_dtype="auto")
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
+device = list(model.hf_device_map.values())[0]
 
 # Set the device
 #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -41,8 +42,8 @@ inputs = tokenizer.encode_plus(
     #pad_to_max_length=True,
 )
 
-input_ids = inputs["input_ids"]
-attention_mask = inputs["attention_mask"]
+input_ids = inputs["input_ids"].to(device)
+attention_mask = inputs["attention_mask"].to(device)
 
 # Start time
 start_time = time.time()
