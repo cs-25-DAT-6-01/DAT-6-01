@@ -23,9 +23,6 @@ model.to(device)
 # Input text
 input_text = "what is the name of justin bieber brother?"
 
-# Start time
-start_time = time.time()
-
 # Tokenize the input text
 inputs = tokenizer.encode_plus(
     input_text,
@@ -38,6 +35,9 @@ inputs = tokenizer.encode_plus(
 
 input_ids = inputs["input_ids"].to(device)
 attention_mask = inputs["attention_mask"].to(device)
+
+# Start time
+start_time = time.time()
 
 # Generate the output (prediction)
 # https://huggingface.co/docs/transformers//generation_strategies#generation-strategies
@@ -53,13 +53,15 @@ output = model.generate(
     use_cache=False,
     kv_cache=None,
 )
+torch.cuda.synchronize()  # Synchronize CUDA to ensure all operations are complete
+# End time
+end_time = time.time()
+inference_time = end_time - start_time
 
 # Decode the output
 generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
 
-# End time
-end_time = time.time()
-inference_time = end_time - start_time
+
 
 reference_text = ("Jazmyn Bieber"
                   "Jaxon Bieber") # This will need to be updated.
