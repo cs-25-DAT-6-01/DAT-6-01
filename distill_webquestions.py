@@ -45,7 +45,7 @@ def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, g
         shift_free_logits = shift_free_logits[:, :min_len2, :]
         shift_teacher_labels = shift_teacher_labels[:, :min_len2]
 
-        loss_consistency = F.cross_entropy(shift_free_logits.reshape(-1, shift_free_logits.size(-1)), shift_teacher_labels.reshape(-1))
+        loss_consistency = F.cross_entropy(shift_free_logits.reshape(-1, shift_free_logits.size(-1)), shift_teacher_labels.reshape(-1).to(student_first_device))
 
         total_loss = loss_ce + alpha * loss_embed + beta * loss_consistency
         return total_loss
