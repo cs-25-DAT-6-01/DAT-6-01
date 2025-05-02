@@ -22,6 +22,41 @@ def cleanup():
     dist.destroy_process_group()
 
 
+def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, rank, batch):    
+        with torch.no_grad():
+            teacher_outputs = teacher.generate(**batch["input_ids"], generation_config=gen_config)
+
+        teacher_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in teacher_outputs]
+        teacher_inputs = tokenizer(teacher_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(rank)
+
+        student_logits = student(teacher_inputs.input_ids).logits
+        shift_logits = student_logits[..., :-1, :].contiguous()
+        shift_labels = teacher_inputs.input_ids[..., 1:].contiguous()
+        min_len = min(shift_logits.size(1), shift_labels.size(1))
+        shift_logits = shift_logits[:, :min_len, :]
+        shift_labels = shift_labels[:, :min_len]
+        loss_ce = F.cross_entropy(shift_logits.reshape(-1, shift_logits.size(-1)), shift_labels.reshape(-1))
+
+        with torch.no_grad():
+            teacher_embeddings = embedder.encode(teacher_texts, convert_to_tensor=True).to(rank)
+
+        student_generated = student.generate(**batch["input_ids"], generation_config=gen_config)
+        student_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in student_generated]
+        student_embeddings = embedder.encode(student_texts, convert_to_tensor=True).to(rank)
+        loss_embed = F.mse_loss(student_embeddings, teacher_embeddings)
+        student_free_inputs = tokenizer(student_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(rank)
+        free_logits = student(student_free_inputs.input_ids).logits
+        shift_free_logits = free_logits[..., :-1, :].contiguous()
+        shift_teacher_labels = teacher_inputs.input_ids[..., 1:].contiguous()
+        min_len2 = min(shift_free_logits.size(1), shift_teacher_labels.size(1))
+        shift_free_logits = shift_free_logits[:, :min_len2, :]
+        shift_teacher_labels = shift_teacher_labels[:, :min_len2]
+
+        loss_consistency = F.cross_entropy(shift_free_logits.reshape(-1, shift_free_logits.size(-1)), shift_teacher_labels.reshape(-1))
+
+        total_loss = loss_ce + alpha * loss_embed + beta * loss_consistency
+        return total_loss
+
 def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
     """
     Computes the knowledge distillation loss.
@@ -65,6 +100,12 @@ def train(rank, world_size):
     student_tokenizer.pad_token = student_tokenizer.eos_token
     # student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
+    
+    embedder = AutoModelForCausalLM.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+    
+    gen_config = {
+        "repetition_penalty": 1.2,
+    }
 
     print("Loading wikitext dataset")
     # Example: Load a dataset like "wikitext"
@@ -75,7 +116,7 @@ def train(rank, world_size):
     # Tokenize the dataset
     def tokenize_function(examples):
         inputs = teacher_tokenizer(examples['question'], return_tensors="pt", padding="max_length", truncation=True,
-                                 max_length=512)
+                                 max_length=128)
         
         # Answers preprocessing
         if isinstance(examples['answers'], list):
@@ -83,7 +124,7 @@ def train(rank, world_size):
         else:
             examples["answers"] = [str(examples["answers"])]
         labels = teacher_tokenizer(examples['answers'], return_tensors="pt", padding="max_length", truncation=True,
-                                 max_length=512)
+                                 max_length=128)
         inputs['labels'] = labels['input_ids']
         return inputs
 
@@ -116,10 +157,12 @@ def train(rank, world_size):
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
-    num_epochs = 6
+    num_epochs = 10
 
     print("Starting training")
     for epoch in range(num_epochs):
+        alpha = 0.5
+        beta = 0.5
         train_sampler.set_epoch(epoch)
         student_model.train()
         teacher_model.eval()  # Teacher model doesn't need gradient updates
@@ -130,20 +173,8 @@ def train(rank, world_size):
             attention_mask = batch["attention_mask"].to(rank)
             labels = batch["labels"].to(rank)
 
-            def custom_student_forward(input_ids, attention_mask):
-                return student_model(input_ids=input_ids, attention_mask=attention_mask)
-
-            # Forward pass through the student model
-            student_outputs = checkpoint.checkpoint(custom_student_forward,input_ids, attention_mask, use_reentrant=False)
-            student_logits = student_outputs.logits
-
-            # Forward pass through the teacher model (no gradients)
-            with torch.no_grad():
-                teacher_outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
-                teacher_logits = teacher_outputs.logits
-
             # Calculate distillation loss
-            loss = distillation_loss(student_logits, teacher_logits, labels, T=1.2, alpha=0.7)
+            loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, rank, batch)
 
             # Backward pass
             optimizer.zero_grad()
@@ -167,7 +198,7 @@ def train(rank, world_size):
             labels = batch["labels"].to(rank)
 
             # Forward pass through the student model
-            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=input_ids)
+            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
             print("Calculating log probs")
             log_probs = F.log_softmax(outputs.logits, dim=-1).to(rank)
             print("Updating perplexity inputs")
@@ -181,8 +212,8 @@ def train(rank, world_size):
     print("Saving model")
     # Save the student model and tokenizer
     model_name = student_model_name.replace("/", "-")
-    student_model.module.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2-webquestions")
-    student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2-webquestions")
+    student_model.module.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_webquestions_alpha-{alpha}_beta-{beta}")
+    student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_-webquestions_alpha-{alpha}_beta-{beta}")
     cleanup()
 
 
