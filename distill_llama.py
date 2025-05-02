@@ -1,26 +1,11 @@
 import os
-
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import torch
 import torch.nn.functional as F
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 from huggingface_hub import login
-from torch.nn.parallel import DistributedDataParallel as DDP
-import torch.distributed as dist
 from torcheval.metrics import Perplexity as Perplexity
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-
-def setup(rank, world_size):
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
-
-    dist.init_process_group(rank=rank, world_size=world_size, backend='nccl')
-
-
-def cleanup():
-    dist.destroy_process_group()
-
 
 def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
     """
@@ -60,7 +45,6 @@ def train():
     teacher_model_name = "meta-llama/Llama-3.1-8B"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
-    # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, quantization_config=bnb_config, device_map="auto", torch_dtype="auto")
     teacher_model.config.pad_token_id = teacher_model.config.eos_token_id    
 
@@ -69,7 +53,6 @@ def train():
     student_model_name = "meta-llama/Llama-3.2-1B"
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
     student_tokenizer.pad_token = student_tokenizer.eos_token
-    # student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     student_model = AutoModelForCausalLM.from_pretrained(student_model_name, quantization_config=bnb_config, device_map="auto", torch_dtype="auto")
     student_model.config.pad_token_id = student_model.config.eos_token_id
 
@@ -101,12 +84,6 @@ def train():
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
     test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
-    #train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
-    #test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
-
-    # DataLoader for the dataset
-    #train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
-    #test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
     train_dataloader = DataLoader(train_dataset, batch_size=4)
     test_dataloader = DataLoader(test_dataset, batch_size=4)
     
@@ -129,13 +106,7 @@ def train():
             attention_mask = batch["attention_mask"].to(student_first_device)
             labels = batch["labels"].to(student_first_device)
 
-            def custom_student_forward(input_ids, attention_mask):
-                #input_ids = input_ids.to(rank)
-                #attention_mask = attention_mask.to(rank)
-                return student_model(input_ids=input_ids, attention_mask=attention_mask)
-
             # Forward pass through the student model
-            #student_outputs = checkpoint.checkpoint(custom_student_forward,input_ids, attention_mask, use_reentrant=False)
             student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
             student_logits = student_outputs.logits
 
@@ -185,12 +156,9 @@ def train():
     model_name = student_model_name.replace("/", "-")
     student_model.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2-webquestions")
     student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_temperature-1.2-webquestions")
-    cleanup()
 
 
 def main():
-    #world_size = torch.cuda.device_count()
-    #torch.multiprocessing.spawn(train, args=(world_size,), nprocs=world_size, join=True)
     train()
 
 
