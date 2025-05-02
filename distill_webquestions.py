@@ -69,7 +69,6 @@ def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
 def train():
     login(os.getenv("HF_TOKEN"))
 
-    print("GPU: ", rank)
     print("Loading openai-community/gpt2-large")
     # Load the pre-trained openai-community/gpt2-large (teacher)
     teacher_model_name = "openai-community/gpt2-large"
