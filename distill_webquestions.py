@@ -66,7 +66,7 @@ def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
     return alpha * ce_loss + (1 - alpha) * (T * T) * kl_loss
 
 
-def train(rank, world_size):
+def train():
     login(os.getenv("HF_TOKEN"))
 
     print("GPU: ", rank)
