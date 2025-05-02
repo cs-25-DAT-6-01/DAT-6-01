@@ -1,6 +1,6 @@
 import os
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 import torch
 import torch.nn.functional as F
 from datasets import load_dataset
@@ -85,9 +85,10 @@ def train():
     
     embedder = AutoModelForCausalLM.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
     
-    gen_config = {
-        "repetition_penalty": 1.2,
-    }
+    gen_config = GenerationConfig(
+        repetition_penalty = 1.2,
+        bos_token_id = student_tokenizer.bos_token_id,
+    )
 
     print("Loading wikitext dataset")
     # Example: Load a dataset like "wikitext"
@@ -171,7 +172,6 @@ def train():
             log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
             print("Updating perplexity inputs")
             perplexity_metric.update(log_probs, labels)
-
 
         print("Computing perplexity")
         perplexity_score = perplexity_metric.compute()
