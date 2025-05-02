@@ -1,6 +1,7 @@
 import os
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
+from sentence_transformers import SentenceTransformer
 import torch
 import torch.nn.functional as F
 from datasets import load_dataset
@@ -83,7 +84,7 @@ def train():
     student_tokenizer.pad_token = student_tokenizer.eos_token
     student_model = AutoModelForCausalLM.from_pretrained(student_model_name, device_map="auto", torch_dtype="auto")
     
-    embedder = AutoModelForCausalLM.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+    embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
     
     gen_config = GenerationConfig(
         repetition_penalty = 1.2,
