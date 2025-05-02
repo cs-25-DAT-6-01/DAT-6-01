@@ -36,14 +36,12 @@ print("Input text:", input_text)
 inputs = tokenizer.encode_plus(
     input_text,
     return_tensors="pt",
-    #padding="max_length",
-    #truncation=True,
-    #max_length=150,
-    #pad_to_max_length=True,
+    padding="max_length",
+    truncation=True,
+    max_length=128,
 )
 
 input_ids = inputs["input_ids"].to(device)
-attention_mask = inputs["attention_mask"].to(device)
 
 # Start time
 start_time = time.time()
@@ -52,13 +50,6 @@ start_time = time.time()
 # https://huggingface.co/docs/transformers//generation_strategies#generation-strategies
 output = model.generate(
     input_ids,
-    attention_mask=attention_mask,
-    max_new_tokens=100,
-    #temperature=0.7,
-    #top_k=50,
-    #top_p=0.9,
-    repetition_penalty=1.3,
-    #do_sample=True,
     use_cache=False,
     kv_cache=None,
 )
