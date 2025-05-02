@@ -11,7 +11,11 @@ from torcheval.metrics import Perplexity as Perplexity
 
 def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
         with torch.no_grad():
-            teacher_outputs = teacher.generate(input_ids=batch["input_ids"].to(teacher_first_device), generation_config=gen_config)
+            teacher_outputs = teacher.generate(
+                input_ids=batch["input_ids"].to(teacher_first_device), 
+                attention_mask=batch["attention_mask"].to(teacher_first_device), 
+                generation_config=gen_config
+                )
 
         teacher_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in teacher_outputs]
         teacher_inputs = tokenizer(teacher_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(teacher_first_device)
@@ -26,10 +30,13 @@ def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, g
         with torch.no_grad():
             teacher_embeddings = embedder.encode(teacher_texts, convert_to_tensor=True).to(teacher_first_device)
 
-        student_generated = student.generate(input_ids=batch["input_ids"].to(student_first_device), generation_config=gen_config)
+        student_generated = student.generate(
+            input_ids=batch["input_ids"].to(student_first_device),
+            attention_mask=batch["attention_mask"].to(student_first_device), 
+            generation_config=gen_config)
         student_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in student_generated]
         student_embeddings = embedder.encode(student_texts, convert_to_tensor=True).to(student_first_device)
-        loss_embed = F.mse_loss(student_embeddings, teacher_embeddings)
+        loss_embed = F.mse_loss(student_embeddings.to(student_first_device), teacher_embeddings.to(student_first_device))
         student_free_inputs = tokenizer(student_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(student_first_device)
         free_logits = student(student_free_inputs.input_ids).logits
         shift_free_logits = free_logits[..., :-1, :].contiguous()
@@ -75,6 +82,7 @@ def train():
     teacher_model_name = "openai-community/gpt2-large"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
+    teacher_tokenizer.padding_side = "left"
     teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, device_map="auto", torch_dtype="auto")
 
     print("Loading gpt2 model")
@@ -82,6 +90,7 @@ def train():
     student_model_name = "openai-community/gpt2"
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
     student_tokenizer.pad_token = student_tokenizer.eos_token
+    student_tokenizer.padding_side = "left"
     student_model = AutoModelForCausalLM.from_pretrained(student_model_name, device_map="auto", torch_dtype="auto")
     
     embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
@@ -89,6 +98,7 @@ def train():
     gen_config = GenerationConfig(
         repetition_penalty = 1.2,
         bos_token_id = student_tokenizer.bos_token_id,
+        pad_token_id = student_tokenizer.pad_token_id,
     )
 
     print("Loading wikitext dataset")
