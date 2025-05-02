@@ -6,29 +6,14 @@ import torch.nn.functional as F
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 from huggingface_hub import login
-from torch.nn.parallel import DistributedDataParallel as DDP
-import torch.distributed as dist
 from torcheval.metrics import Perplexity as Perplexity
-from torch.utils import checkpoint
 
-def setup(rank, world_size):
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
-
-    dist.init_process_group(rank=rank, world_size=world_size, backend='nccl')
-
-
-def cleanup():
-    dist.destroy_process_group()
-
-
-def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, rank, batch):    
+def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
         with torch.no_grad():
-            teacher_outputs = teacher.module.generate(**batch["input_ids"], generation_config=gen_config)
+            teacher_outputs = teacher.generate(**batch["input_ids"], generation_config=gen_config)
 
         teacher_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in teacher_outputs]
-        teacher_inputs = tokenizer(teacher_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(rank)
-
+        teacher_inputs = tokenizer(teacher_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(teacher_first_device)
         student_logits = student(teacher_inputs.input_ids).logits
         shift_logits = student_logits[..., :-1, :].contiguous()
         shift_labels = teacher_inputs.input_ids[..., 1:].contiguous()
@@ -38,13 +23,13 @@ def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, g
         loss_ce = F.cross_entropy(shift_logits.reshape(-1, shift_logits.size(-1)), shift_labels.reshape(-1))
 
         with torch.no_grad():
-            teacher_embeddings = embedder.encode(teacher_texts, convert_to_tensor=True).to(rank)
+            teacher_embeddings = embedder.encode(teacher_texts, convert_to_tensor=True).to(teacher_first_device)
 
-        student_generated = student.module.generate(**batch["input_ids"], generation_config=gen_config)
+        student_generated = student.generate(**batch["input_ids"], generation_config=gen_config)
         student_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in student_generated]
-        student_embeddings = embedder.encode(student_texts, convert_to_tensor=True).to(rank)
+        student_embeddings = embedder.encode(student_texts, convert_to_tensor=True).to(student_first_device)
         loss_embed = F.mse_loss(student_embeddings, teacher_embeddings)
-        student_free_inputs = tokenizer(student_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(rank)
+        student_free_inputs = tokenizer(student_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(student_first_device)
         free_logits = student(student_free_inputs.input_ids).logits
         shift_free_logits = free_logits[..., :-1, :].contiguous()
         shift_teacher_labels = teacher_inputs.input_ids[..., 1:].contiguous()
@@ -90,16 +75,14 @@ def train(rank, world_size):
     teacher_model_name = "openai-community/gpt2-large"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
-    # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name)
+    teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, device_map="auto", torch_dtype="auto")
 
     print("Loading gpt2 model")
     # Load the pre-trained "openai-community/gpt2" model (student)
     student_model_name = "openai-community/gpt2"
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
     student_tokenizer.pad_token = student_tokenizer.eos_token
-    # student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
+    student_model = AutoModelForCausalLM.from_pretrained(student_model_name, device_map="auto", torch_dtype="auto")
     
     embedder = AutoModelForCausalLM.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
     
@@ -128,19 +111,6 @@ def train(rank, world_size):
         inputs['labels'] = labels['input_ids']
         return inputs
 
-    setup(rank, world_size)
-
-    # Multiple gpus
-    torch.cuda.set_device(rank)
-
-    print("Wrapping teacher in DDP")
-    teacher_model.to(rank)
-    teacher_model = DDP(teacher_model, device_ids=[rank])
-
-    print("Wrapping student in DDP")
-    student_model.to(rank)
-    student_model = DDP(student_model, device_ids=[rank])
-
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
     test_dataset = test_dataset.map(tokenize_function, batched=True)
@@ -148,12 +118,12 @@ def train(rank, world_size):
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
     test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
-    train_sampler = torch.utils.data.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
-    test_sampler = torch.utils.data.DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
-
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=4, sampler=train_sampler)
-    test_dataloader = DataLoader(test_dataset, batch_size=4, sampler=test_sampler)
+    train_dataloader = DataLoader(train_dataset, batch_size=4)
+    test_dataloader = DataLoader(test_dataset, batch_size=4)
+    
+    student_first_device = list(student_model.hf_device_map.values())[0]
+    teacher_first_device = list(teacher_model.hf_device_map.values())[0]
 
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
@@ -163,18 +133,17 @@ def train(rank, world_size):
     for epoch in range(num_epochs):
         alpha = 0.5
         beta = 0.5
-        train_sampler.set_epoch(epoch)
         student_model.train()
         teacher_model.eval()  # Teacher model doesn't need gradient updates
 
         total_loss = 0
         for batch in train_dataloader:
-            input_ids = batch["input_ids"].to(rank)
-            attention_mask = batch["attention_mask"].to(rank)
-            labels = batch["labels"].to(rank)
+            input_ids = batch["input_ids"].to(student_first_device)
+            attention_mask = batch["attention_mask"].to(student_first_device)
+            labels = batch["labels"].to(student_first_device)
 
             # Calculate distillation loss
-            loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, rank, batch)
+            loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
 
             # Backward pass
             optimizer.zero_grad()
@@ -192,15 +161,15 @@ def train(rank, world_size):
     print("Starting evaluation")
     with torch.no_grad():
         for batch in test_dataloader:
-            perplexity_metric = Perplexity().to(rank)
-            input_ids = batch["input_ids"].to(rank)
-            attention_mask = batch["attention_mask"].to(rank)
-            labels = batch["labels"].to(rank)
+            perplexity_metric = Perplexity().to(student_first_device)
+            input_ids = batch["input_ids"].to(student_first_device)
+            attention_mask = batch["attention_mask"].to(student_first_device)
+            labels = batch["labels"].to(student_first_device)
 
             # Forward pass through the student model
             outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
             print("Calculating log probs")
-            log_probs = F.log_softmax(outputs.logits, dim=-1).to(rank)
+            log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
             print("Updating perplexity inputs")
             perplexity_metric.update(log_probs, labels)
 
@@ -214,12 +183,10 @@ def train(rank, world_size):
     model_name = student_model_name.replace("/", "-")
     student_model.module.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_webquestions_alpha-{alpha}_beta-{beta}")
     student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_-webquestions_alpha-{alpha}_beta-{beta}")
-    cleanup()
 
 
 def main():
-    world_size = torch.cuda.device_count()
-    torch.multiprocessing.spawn(train, args=(world_size,), nprocs=world_size, join=True)
+    train()
 
 
 if __name__ == "__main__":
