@@ -24,7 +24,7 @@ def cleanup():
 
 def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, rank, batch):    
         with torch.no_grad():
-            teacher_outputs = teacher.generate(**batch["input_ids"], generation_config=gen_config)
+            teacher_outputs = teacher.module.generate(**batch["input_ids"], generation_config=gen_config)
 
         teacher_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in teacher_outputs]
         teacher_inputs = tokenizer(teacher_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(rank)
@@ -40,7 +40,7 @@ def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, g
         with torch.no_grad():
             teacher_embeddings = embedder.encode(teacher_texts, convert_to_tensor=True).to(rank)
 
-        student_generated = student.generate(**batch["input_ids"], generation_config=gen_config)
+        student_generated = student.module.generate(**batch["input_ids"], generation_config=gen_config)
         student_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in student_generated]
         student_embeddings = embedder.encode(student_texts, convert_to_tensor=True).to(rank)
         loss_embed = F.mse_loss(student_embeddings, teacher_embeddings)
