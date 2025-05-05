@@ -107,7 +107,7 @@ def train():
         pad_token_id = student_tokenizer.pad_token_id,
     )
 
-    print("Loading wikitext dataset")
+    print("Loading webquestions dataset")
     # Example: Load a dataset like "wikitext"
     dataset = load_dataset("web_questions")
     train_dataset = dataset["train"]

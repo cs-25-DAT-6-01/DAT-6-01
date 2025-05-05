@@ -189,7 +189,7 @@ def train():
             labels = input_ids.clone().detach()
 
             # Forward pass through the student model
-            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=input_ids)
+            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
             print("Calculating log probs")
             log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
             print("Updating perplexity inputs")

@@ -112,33 +112,23 @@ def train():
         pad_token_id = student_tokenizer.pad_token_id,
     )
 
-    print("Loading webquestions dataset")
+    print("Loading wikitext dataset")
     # Example: Load a dataset like "wikitext"
-    dataset = load_dataset("web_questions")
+    dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
     train_dataset = dataset["train"]
     test_dataset = dataset["test"]
 
-    # Tokenize the dataset
+     # Tokenize the dataset
     def tokenize_function(examples):
-        inputs = teacher_tokenizer(examples['question'], return_tensors="pt", padding="max_length", truncation=True,
-                                 max_length=128)
-        
-        # Answers preprocessing
-        if isinstance(examples['answers'], list):
-            examples["answers"] = [str(text) for text in examples["answers"]]
-        else:
-            examples["answers"] = [str(examples["answers"])]
-        labels = teacher_tokenizer(examples['answers'], return_tensors="pt", padding="max_length", truncation=True,
-                                 max_length=128)
-        inputs['labels'] = labels['input_ids']
-        return inputs
+        return teacher_tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True,
+                                 max_length=512)
 
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
     test_dataset = test_dataset.map(tokenize_function, batched=True)
 
-    train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
-    test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
+    train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
+    test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
     train_dataloader = DataLoader(train_dataset, batch_size=4)
     test_dataloader = DataLoader(test_dataset, batch_size=4)
@@ -161,7 +151,7 @@ def train():
         for batch in train_dataloader:
             input_ids = batch["input_ids"].to(student_first_device)
             attention_mask = batch["attention_mask"].to(student_first_device)
-            labels = batch["labels"].to(student_first_device)
+            labels = input_ids.clone().detach()
 
             # Forward pass through the student model
             #student_outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
@@ -194,7 +184,7 @@ def train():
             perplexity_metric = Perplexity().to(student_first_device)
             input_ids = batch["input_ids"].to(student_first_device)
             attention_mask = batch["attention_mask"].to(student_first_device)
-            labels = batch["labels"].to(student_first_device)
+            labels = input_ids.clone().detach()
 
             # Forward pass through the student model
             outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
