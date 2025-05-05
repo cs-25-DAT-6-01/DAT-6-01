@@ -10,6 +10,7 @@ from huggingface_hub import login
 from torcheval.metrics import Perplexity as Perplexity
 
 def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
+        # Teacher-forced CE
         with torch.no_grad():
             teacher_outputs = teacher.generate(
                 input_ids=batch["input_ids"].to(teacher_first_device), 
@@ -18,8 +19,9 @@ def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, g
                 )
 
         teacher_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in teacher_outputs]
-        teacher_inputs = tokenizer(teacher_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(teacher_first_device)
-        student_logits = student(teacher_inputs.input_ids).logits
+        teacher_inputs = tokenizer(teacher_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(student_first_device)
+        student_logits = student(teacher_inputs.input_ids, attention_mask=teacher_inputs.attention_mask).logits
+        
         shift_logits = student_logits[..., :-1, :].contiguous()
         shift_labels = teacher_inputs.input_ids[..., 1:].contiguous()
         min_len = min(shift_logits.size(1), shift_labels.size(1))
@@ -27,18 +29,22 @@ def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, g
         shift_labels = shift_labels[:, :min_len]
         loss_ce = F.cross_entropy(shift_logits.reshape(-1, shift_logits.size(-1)), shift_labels.reshape(-1))
 
+        # Embedding MSE
         with torch.no_grad():
-            teacher_embeddings = embedder.encode(teacher_texts, convert_to_tensor=True).to(teacher_first_device)
+            teacher_embeddings = embedder.encode(teacher_texts, convert_to_tensor=True).to(student_first_device)
 
         student_generated = student.generate(
             input_ids=batch["input_ids"].to(student_first_device),
             attention_mask=batch["attention_mask"].to(student_first_device), 
             generation_config=gen_config)
+        
         student_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in student_generated]
         student_embeddings = embedder.encode(student_texts, convert_to_tensor=True).to(student_first_device)
         loss_embed = F.mse_loss(student_embeddings.to(student_first_device), teacher_embeddings.to(student_first_device))
+        
+        # Consistency CE
         student_free_inputs = tokenizer(student_texts, return_tensors="pt", padding=True, truncation=True, max_length=128).to(student_first_device)
-        free_logits = student(student_free_inputs.input_ids).logits
+        free_logits = student(student_free_inputs.input_ids, attention_mask=student_free_inputs.attention_mask).logits
         shift_free_logits = free_logits[..., :-1, :].contiguous()
         shift_teacher_labels = teacher_inputs.input_ids[..., 1:].contiguous()
         min_len2 = min(shift_free_logits.size(1), shift_teacher_labels.size(1))
