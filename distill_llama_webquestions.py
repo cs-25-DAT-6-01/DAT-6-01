@@ -94,6 +94,7 @@ def train():
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
     teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, quantization_config=bnb_config, device_map="auto", torch_dtype="auto")
+    teacher_tokenizer.padding_side = "left"
     teacher_model.config.pad_token_id = teacher_model.config.eos_token_id    
 
     print("Loading Llama-3.2-1B model")
@@ -102,6 +103,7 @@ def train():
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
     student_tokenizer.pad_token = student_tokenizer.eos_token
     student_model = AutoModelForCausalLM.from_pretrained(student_model_name, quantization_config=bnb_config, device_map="auto", torch_dtype="auto")
+    student_tokenizer.padding_side = "left"
     student_model.config.pad_token_id = student_model.config.eos_token_id
     
     embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')

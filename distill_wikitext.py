@@ -91,6 +91,7 @@ def train():
     teacher_model_name = "openai-community/gpt2-large"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
+    teacher_tokenizer.padding_side = "left"
     # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, device_map="auto", torch_dtype="auto")
 
@@ -99,6 +100,7 @@ def train():
     student_model_name = "openai-community/gpt2"
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
     student_tokenizer.pad_token = student_tokenizer.eos_token
+    student_tokenizer.padding_side = "left"
     # student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     student_model = AutoModelForCausalLM.from_pretrained(student_model_name, device_map="auto", torch_dtype="auto")
     
