@@ -121,7 +121,7 @@ def train():
     # Tokenize the dataset
     def tokenize_function(examples):
         return teacher_tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True,
-                                 max_length=512)
+                                 max_length=128)
 
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
