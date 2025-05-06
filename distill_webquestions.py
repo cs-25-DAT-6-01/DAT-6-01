@@ -138,7 +138,7 @@ def train():
 
     # DataLoader for the dataset
     train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=4, pin_memory=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=16, num_workers=4, pin_memory=True)
+    # test_dataloader = DataLoader(test_dataset, batch_size=16, num_workers=4, pin_memory=True)
     
     student_first_device = list(student_model.hf_device_map.values())[0]
     teacher_first_device = list(teacher_model.hf_device_map.values())[0]
