@@ -150,34 +150,30 @@ def train():
 
         total_loss = 0
         for batch in train_dataloader:
+            perplexity_metric = Perplexity().to(student_first_device)
             input_ids = batch["input_ids"].to(student_first_device)
             attention_mask = batch["attention_mask"].to(student_first_device)
-            labels = input_ids.clone().detach()  # Language modeling, labels are input_ids
-
-            #def custom_student_forward(input_ids, attention_mask):
-            #    return student_model(input_ids=input_ids, attention_mask=attention_mask)
-
-            # Forward pass through the student model
-            #student_outputs = checkpoint.checkpoint(custom_student_forward,input_ids, attention_mask, use_reentrant=False)
-            #student_logits = student_outputs.logits
-
-            # Forward pass through the teacher model (no gradients)
-            #with torch.no_grad():
-            #    teacher_outputs = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
-            #    teacher_logits = teacher_outputs.logits
+            labels = batch["labels"].to(student_first_device)
 
             # Calculate distillation loss
             loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
-
+                        
             # Backward pass
             optimizer.zero_grad()
             loss.requires_grad_(True)
             loss.backward()
             optimizer.step()
+            
+            # Forward pass through the student model for perplexity calculation
+            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+            log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
+            perplexity_metric.update(log_probs, labels)
 
             total_loss += loss.item()
 
         print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss / len(train_dataloader)}")
+        perplexity_score = perplexity_metric.compute()
+        print(f"Perplexity: {perplexity_score}")  
 
     # Evaluate the student model
     student_model.eval()

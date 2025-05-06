@@ -155,44 +155,30 @@ def train():
 
         total_loss = 0
         for batch in train_dataloader:
+            perplexity_metric = Perplexity().to(student_first_device)
             input_ids = batch["input_ids"].to(student_first_device)
             attention_mask = batch["attention_mask"].to(student_first_device)
             labels = batch["labels"].to(student_first_device)
 
             # Calculate distillation loss
             loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
-
+                        
             # Backward pass
             optimizer.zero_grad()
             loss.requires_grad_(True)
             loss.backward()
             optimizer.step()
+            
+            # Forward pass through the student model for perplexity calculation
+            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+            log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
+            perplexity_metric.update(log_probs, labels)
 
             total_loss += loss.item()
 
         print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss / len(train_dataloader)}")
-
-    # Evaluate the student model
-    student_model.eval()
-
-    print("Starting evaluation")
-    with torch.no_grad():
-        for batch in test_dataloader:
-            perplexity_metric = Perplexity().to(student_first_device)
-            input_ids = batch["input_ids"].to(student_first_device)
-            attention_mask = batch["attention_mask"].to(student_first_device)
-            labels = batch["labels"].to(student_first_device)
-
-            # Forward pass through the student model
-            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-            print("Calculating log probs")
-            log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
-            print("Updating perplexity inputs")
-            perplexity_metric.update(log_probs, labels)
-
-        print("Computing perplexity")
         perplexity_score = perplexity_metric.compute()
-        print(f"Perplexity: {perplexity_score}")
+        print(f"Perplexity: {perplexity_score}")          
 
     print("Saving model")
     # Save the student model and tokenizer
