@@ -8,6 +8,7 @@ from datasets import load_dataset
 from torch.utils.data import DataLoader
 from huggingface_hub import login
 from torcheval.metrics import Perplexity as Perplexity
+from utility import plot_metrics
 
 def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
         # Teacher-forced CE
@@ -145,6 +146,10 @@ def train():
     # Define optimizer for the student model
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
     num_epochs = 10
+    
+    #Plotting metrics
+    loss_history = []
+    ppl_history  = []
 
     print("Starting training")
     for epoch in range(num_epochs):
@@ -176,15 +181,25 @@ def train():
 
             total_loss += loss.item()
 
-        print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss / len(train_dataloader)}")
+        epoch_loss = total_loss / len(train_dataloader)
+        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}")
         perplexity_score = perplexity_metric.compute()
-        print(f"Perplexity: {perplexity_score}")          
+        print(f"Perplexity: {perplexity_score}")  
+        
+        loss_history.append(epoch_loss)
+        ppl_history.append(perplexity_score)
 
     print("Saving model")
     # Save the student model and tokenizer
     model_name = student_model_name.replace("/", "-")
     student_model.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_webquestions_alpha-{alpha}_beta-{beta}")
     student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_webquestions_alpha-{alpha}_beta-{beta}")
+    
+    plot_metrics(
+        metrics={"loss": loss_history, "perplexity": ppl_history},
+        run_tag="webq",
+        out_dir=f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}"
+    )
 
 
 def main():
