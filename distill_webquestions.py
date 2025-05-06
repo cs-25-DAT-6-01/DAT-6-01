@@ -136,8 +136,8 @@ def train():
     test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=4)
-    test_dataloader = DataLoader(test_dataset, batch_size=4)
+    train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=4, pin_memory=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=16, num_workers=4, pin_memory=True)
     
     student_first_device = list(student_model.hf_device_map.values())[0]
     teacher_first_device = list(teacher_model.hf_device_map.values())[0]
@@ -170,7 +170,7 @@ def train():
             optimizer.step()
             
             # Forward pass through the student model for perplexity calculation
-            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
             log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
             perplexity_metric.update(log_probs, labels)
 

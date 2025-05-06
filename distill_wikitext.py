@@ -131,8 +131,8 @@ def train():
     test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=4)
-    test_dataloader = DataLoader(test_dataset, batch_size=4)
+    train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=4, pin_memory=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=16, num_workers=4, pin_memory=True)
     
     student_first_device = list(student_model.hf_device_map.values())[0]
     teacher_first_device = list(teacher_model.hf_device_map.values())[0]
@@ -165,7 +165,7 @@ def train():
             optimizer.step()
             
             # Forward pass through the student model for perplexity calculation
-            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
             log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
             perplexity_metric.update(log_probs, labels)
 
@@ -174,29 +174,6 @@ def train():
         print(f"Epoch [{epoch + 1}/{num_epochs}], Loss: {total_loss / len(train_dataloader)}")
         perplexity_score = perplexity_metric.compute()
         print(f"Perplexity: {perplexity_score}")  
-
-    # Evaluate the student model
-    student_model.eval()
-
-    print("Starting evaluation")
-    with torch.no_grad():
-        for batch in test_dataloader:
-            perplexity_metric = Perplexity().to(student_first_device)
-            input_ids = batch["input_ids"].to(student_first_device)
-            attention_mask = batch["attention_mask"].to(student_first_device)
-            labels = input_ids.clone().detach()
-
-            # Forward pass through the student model
-            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-            print("Calculating log probs")
-            log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
-            print("Updating perplexity inputs")
-            perplexity_metric.update(log_probs, labels)
-
-
-        print("Computing perplexity")
-        perplexity_score = perplexity_metric.compute()
-        print(f"Perplexity: {perplexity_score}")
 
     print("Saving model")
     # Save the student model and tokenizer
