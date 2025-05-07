@@ -158,7 +158,7 @@ def train():
             perplexity_metric = Perplexity().to(student_first_device)
             input_ids = batch["input_ids"].to(student_first_device)
             attention_mask = batch["attention_mask"].to(student_first_device)
-            labels = batch["labels"].to(student_first_device)
+            labels = input_ids.clone().detach()
 
             # Calculate distillation loss
             loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
