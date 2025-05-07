@@ -7,12 +7,12 @@ from rouge_score import rouge_scorer
 
 # Define file name and such
 model_name = "openai-community-gpt2"
-amount_of_epochs = "6"
+amount_of_epochs = "10"
 
 # Path to the trained model/tokenizer
 # = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_temperature-1.2"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext"
 
 # Load the model and tokenizer
 #base_model = AutoModelForCausalLM.from_pretrained(base_model_path, local_files_only=True)
