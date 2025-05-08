@@ -24,7 +24,7 @@ def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, g
                 )
 
         teacher_texts = [tokenizer.decode(out, skip_special_tokens=True) for out in teacher_outputs]
-        teacher_inputs = tokenizer(teacher_texts, return_tensors="pt", padding=True, truncation=True, max_length=512).to(student_first_device)
+        teacher_inputs = tokenizer(teacher_texts, return_tensors="pt", padding=True, truncation=True, max_length=10242).to(student_first_device)
         student_logits = student(teacher_inputs.input_ids, attention_mask=teacher_inputs.attention_mask).logits
         
         shift_logits = student_logits[..., :-1, :].contiguous()
@@ -48,7 +48,7 @@ def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, g
         loss_embed = F.mse_loss(student_embeddings.to(student_first_device), teacher_embeddings.to(student_first_device))
         
         # Consistency CE
-        student_free_inputs = tokenizer(student_texts, return_tensors="pt", padding=True, truncation=True, max_length=512).to(student_first_device)
+        student_free_inputs = tokenizer(student_texts, return_tensors="pt", padding=True, truncation=True, max_length=1024).to(student_first_device)
         free_logits = student(student_free_inputs.input_ids, attention_mask=student_free_inputs.attention_mask).logits
         shift_free_logits = free_logits[..., :-1, :].contiguous()
         shift_teacher_labels = teacher_inputs.input_ids[..., 1:].contiguous()
@@ -124,7 +124,7 @@ def train():
     # Tokenize the dataset
     def tokenize_function(examples):
         return teacher_tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True,
-                                 max_length=512)
+                                 max_length=1024)
 
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
