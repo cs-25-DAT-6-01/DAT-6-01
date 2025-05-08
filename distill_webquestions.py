@@ -10,7 +10,7 @@ from huggingface_hub import login
 from torcheval.metrics import Perplexity as Perplexity
 from utility import plot_metrics
 
-def new_distillation_loss(alpha, beta, gamma,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
+def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
         # Teacher-forced CE
         with torch.no_grad():
             teacher_outputs = teacher.generate(
@@ -52,18 +52,9 @@ def new_distillation_loss(alpha, beta, gamma,  student, teacher, tokenizer, embe
         shift_free_logits = shift_free_logits[:, :min_len2, :]
         shift_teacher_labels = shift_teacher_labels[:, :min_len2]
         
-        teacher_logits = teacher(batch["labels"].to(teacher_first_device)).logits
-        
-        # Soft targets (teacher's soft output)
-        soft_teacher_output = F.softmax(teacher_logits, dim=-1)
-        soft_student_output = F.log_softmax(student_logits, dim=-1)
-
-        # KL Divergence loss
-        kl_loss = F.kl_div(soft_student_output, soft_teacher_output, reduction='batchmean')
-
         loss_consistency = F.cross_entropy(shift_free_logits.reshape(-1, shift_free_logits.size(-1)), shift_teacher_labels.reshape(-1).to(student_first_device))
 
-        total_loss = loss_ce.to(student_first_device) + alpha * loss_embed.to(student_first_device) + beta * loss_consistency.to(student_first_device) + gamma * kl_loss.to(student_first_device)
+        total_loss = loss_ce.to(student_first_device) + alpha * loss_embed.to(student_first_device) + beta * loss_consistency.to(student_first_device)
         return total_loss
 
 def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
@@ -162,9 +153,8 @@ def train():
 
     print("Starting training")
     for epoch in range(num_epochs):
-        alpha = 0.3
-        beta = 0.3
-        gamma = 0.4
+        alpha = 0.5
+        beta = 0.5
         student_model.train()
         teacher_model.eval()  # Teacher model doesn't need gradient updates
 
@@ -176,7 +166,7 @@ def train():
             labels = batch["labels"].to(student_first_device)
 
             # Calculate distillation loss
-            loss = new_distillation_loss(alpha, beta, gamma, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
+            loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
                         
             # Backward pass
             optimizer.zero_grad()
