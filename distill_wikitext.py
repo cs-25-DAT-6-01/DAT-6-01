@@ -13,6 +13,8 @@ from sentence_transformers import SentenceTransformer
 from utility import plot_metrics
 
 def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
+        tokenizer.padding_side = "left"
+        tokenizer.pad_token = tokenizer.eos_token
         # Teacher-forced CE
         with torch.no_grad():
             teacher_outputs = teacher.generate(
