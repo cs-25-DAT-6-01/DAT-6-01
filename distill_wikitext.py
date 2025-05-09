@@ -187,7 +187,7 @@ def train():
     #test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
     # DataLoader for the dataset
-    train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=2, pin_memory=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=32, num_workers=4, pin_memory=True)
     # test_dataloader = DataLoader(test_dataset, batch_size=16, num_workers=4, pin_memory=True)
     
     student_first_device = list(student_model.hf_device_map.values())[0]
@@ -216,7 +216,7 @@ def train():
             labels = input_ids.clone().detach()
 
             # Calculate distillation loss
-            loss = new_new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
+            loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
                         
             # Backward pass
             optimizer.zero_grad()
