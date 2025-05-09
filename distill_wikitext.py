@@ -11,6 +11,7 @@ from torcheval.metrics import Perplexity as Perplexity
 from torch.utils import checkpoint
 from sentence_transformers import SentenceTransformer
 from utility import plot_metrics
+from collections import defaultdict
 
 def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
         tokenizer.padding_side = "left"
@@ -117,9 +118,9 @@ def train():
 
     print("Loading wikitext dataset")
     # Example: Load a dataset like "wikitext"
-    dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
-    train_dataset = dataset["train"]
-    test_dataset = dataset["test"]
+    train_dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
+    #train_dataset = dataset["train"]
+    #test_dataset = dataset["test"]
 
     # Tokenize the dataset
     def tokenize_function(examples):
@@ -128,10 +129,10 @@ def train():
 
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
-    test_dataset = test_dataset.map(tokenize_function, batched=True)
+    #test_dataset = test_dataset.map(tokenize_function, batched=True)
 
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
-    test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
+    #test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
     # DataLoader for the dataset
     train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=2, pin_memory=True)
