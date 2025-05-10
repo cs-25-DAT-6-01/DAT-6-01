@@ -172,9 +172,9 @@ def train():
     print("Loading wikitext dataset")
     # Example: Load a dataset like "wikitext"
     train_dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
-    test_dataset = test_dataset.map(lambda example: {'text': filter_lines(example['text'])})
-    test_dataset = test_dataset.filter(lambda example: len(example['text']) > 0)
-    test_dataset = test_dataset.select(range(10000))
+    train_dataset = train_dataset.map(lambda example: {'text': filter_lines(example['text'])})
+    train_dataset = train_dataset.filter(lambda example: len(example['text']) > 0)
+    train_dataset = train_dataset.select(range(10000))
     #train_dataset = dataset["train"]
     #test_dataset = dataset["test"]
 
