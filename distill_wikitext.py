@@ -216,7 +216,7 @@ def train():
             labels = input_ids.clone().detach()
 
             # Calculate distillation loss
-            loss = new_new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
+            loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
                         
             # Backward pass
             optimizer.zero_grad()
