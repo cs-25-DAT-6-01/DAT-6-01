@@ -8,6 +8,7 @@ from huggingface_hub import login
 from torcheval.metrics import Perplexity as Perplexity
 from sentence_transformers import SentenceTransformer
 from utility import plot_metrics
+from utility import filter_lines
 
 
 def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
@@ -115,9 +116,11 @@ def train():
 
     print("Loading wikitext dataset")
     # Example: Load a dataset like "wikitext"
-    dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
-    train_dataset = dataset["train"]
-    test_dataset = dataset["test"]
+    train_dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
+    train_dataset = train_dataset.map(lambda example: {'text': filter_lines(example['text'])})
+    train_dataset = train_dataset.filter(lambda example: len(example['text']) > 0)
+    train_dataset = train_dataset.select(range(10000))
+    #test_dataset = dataset["test"]
 
      # Tokenize the dataset
     def tokenize_function(examples):
@@ -126,10 +129,10 @@ def train():
 
     print("Starting tokenization")
     train_dataset = train_dataset.map(tokenize_function, batched=True)
-    test_dataset = test_dataset.map(tokenize_function, batched=True)
+    #test_dataset = test_dataset.map(tokenize_function, batched=True)
 
     train_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
-    test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
+    #test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
     train_dataloader = DataLoader(train_dataset, batch_size=8, num_workers=2, pin_memory=True)
     # test_dataloader = DataLoader(test_dataset, batch_size=16, num_workers=4, pin_memory=True)
