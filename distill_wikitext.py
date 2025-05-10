@@ -38,7 +38,7 @@ def new_new_distillation_loss(alpha, beta, student, teacher, tokenizer, embedder
     min_len = min(shift_teacher_logits.size(1), shift_labels.size(1))
     shift_teacher_logits = shift_teacher_logits[:, :min_len, :]
     shift_labels = shift_labels[:, :min_len]
-    loss_ce = F.cross_entropy(shift_teacher_logits.reshape(-1, shift_teacher_logits.size(-1)), shift_labels.reshape(-1))
+    loss_ce = F.cross_entropy(shift_teacher_logits.reshape(-1, shift_teacher_logits.size(-1)).to(student_first_device), shift_labels.reshape(-1))
 
     # Embedding MSE
     with torch.no_grad():
