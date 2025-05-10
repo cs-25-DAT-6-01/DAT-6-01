@@ -11,6 +11,7 @@ from torcheval.metrics import Perplexity as Perplexity
 from torch.utils import checkpoint
 from sentence_transformers import SentenceTransformer
 from utility import plot_metrics
+from utility import filter_lines
 
 def new_new_distillation_loss(alpha, beta, student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):
     tokenizer.padding_side = "left"
@@ -171,6 +172,9 @@ def train():
     print("Loading wikitext dataset")
     # Example: Load a dataset like "wikitext"
     train_dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
+    test_dataset = test_dataset.map(lambda example: {'text': filter_lines(example['text'])})
+    test_dataset = test_dataset.filter(lambda example: len(example['text']) > 0)
+    test_dataset = test_dataset.select(range(10000))
     #train_dataset = dataset["train"]
     #test_dataset = dataset["test"]
 

@@ -34,7 +34,7 @@ print("Loading wikitext dataset")
 test_dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
 test_dataset = test_dataset.map(lambda example: {'text': filter_lines(example['text'])})
 test_dataset = test_dataset.filter(lambda example: len(example['text']) > 0)
-test_dataset = test_dataset.select(range(1))
+test_dataset = test_dataset.select(range(1000))
 
 # Tokenize the dataset
 def tokenize_function(examples):
