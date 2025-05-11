@@ -20,6 +20,7 @@ def prototype_log_loss(
     gamma=1.0,
     temperature=3.0,
     return_components=False,
+    student_first_device=None,
 ):
     student_logits = student_logits / temperature
     teacher_logits = teacher_logits / temperature
@@ -29,10 +30,10 @@ def prototype_log_loss(
     teacher_probs = F.softmax(teacher_logits, dim=-1)
 
     kl_term = (temperature**2) * F.kl_div(
-        torch.log(student_probs + epsilon), teacher_probs, reduction="batchmean"
+        torch.log(student_probs.to(student_first_device) + epsilon), teacher_probs.to(student_first_device), reduction="batchmean"
     )
 
-    dot = torch.sum(student_probs * teacher_probs, dim=-1)
+    dot = torch.sum(student_probs.to(student_first_device) * teacher_probs.to(student_first_device), dim=-1)
     student_norm = torch.norm(student_probs, dim=-1)
     teacher_norm = torch.norm(teacher_probs, dim=-1)
     cos_sim = dot / (student_norm * teacher_norm + epsilon)
