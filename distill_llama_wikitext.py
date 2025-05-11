@@ -220,6 +220,7 @@ def train():
             loss, kl, align, toptok, entropy = prototype_log_loss(
                 student_logits=student_model(input_ids, attention_mask=attention_mask).logits,
                 teacher_logits=teacher_model(input_ids.to(teacher_first_device), attention_mask=attention_mask.to(teacher_first_device)).logits,
+                student_first_device=student_first_device,
                 return_components=True,
             )
             
