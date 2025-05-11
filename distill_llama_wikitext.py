@@ -208,7 +208,7 @@ def train():
         teacher_model.eval()  # Teacher model doesn't need gradient updates
 
         total_loss = 0
-        for batch, step in enumerate(train_dataloader):
+        for step, batch in enumerate(train_dataloader):
             perplexity_metric = Perplexity().to(student_first_device)
             input_ids = batch["input_ids"].to(student_first_device)
             attention_mask = batch["attention_mask"].to(student_first_device)
