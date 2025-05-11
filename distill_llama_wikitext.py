@@ -13,6 +13,7 @@ from utility import filter_lines
 def prototype_log_loss(
     student_logits,
     teacher_logits,
+    student_first_device,
     epsilon=1e-6,
     alpha=6.0,
     lambd=0.5,
@@ -20,7 +21,6 @@ def prototype_log_loss(
     gamma=1.0,
     temperature=3.0,
     return_components=False,
-    student_first_device=None,
 ):
     student_logits = student_logits / temperature
     teacher_logits = teacher_logits / temperature
