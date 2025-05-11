@@ -1,4 +1,5 @@
 import os
+import time
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 import torch
@@ -12,6 +13,58 @@ from torch.utils import checkpoint
 from sentence_transformers import SentenceTransformer
 from utility import plot_metrics
 from utility import filter_lines
+
+def prototype_log_loss(
+    student_logits,
+    teacher_logits,
+    student_first_device,
+    epsilon=1e-6,
+    alpha=6.0,
+    lambd=0.5,
+    beta=0.5,
+    gamma=1.0,
+    temperature=3.0,
+    return_components=False,
+):
+    student_logits = student_logits / temperature
+    teacher_logits = teacher_logits / temperature
+    teacher_logits = teacher_logits.detach()
+
+    student_probs = F.softmax(student_logits, dim=-1).to(student_first_device)
+    teacher_probs = F.softmax(teacher_logits, dim=-1).to(student_first_device)
+
+    kl_term = (temperature**2) * F.kl_div(
+        torch.log(student_probs + epsilon).to(student_first_device), teacher_probs, reduction="batchmean"
+    )
+
+    dot = torch.sum(student_probs * teacher_probs, dim=-1)
+    student_norm = torch.norm(student_probs, dim=-1)
+    teacher_norm = torch.norm(teacher_probs, dim=-1)
+    cos_sim = dot / (student_norm * teacher_norm + epsilon)
+    attraction_term = torch.mean(torch.log(1 + cos_sim))
+
+    top_token_penalty = (
+        (
+            torch.max(teacher_probs, dim=-1).values
+            - torch.max(student_probs, dim=-1).values
+        )
+        .pow(2)
+        .mean()
+    )
+
+    entropy = -torch.sum(student_probs * torch.log(student_probs + epsilon), dim=-1)
+    entropy_penalty = entropy.mean()
+
+    loss = (
+        lambd * kl_term
+        - alpha * attraction_term
+        + beta * top_token_penalty
+        + gamma * entropy_penalty
+    )
+
+    if return_components:
+        return loss, kl_term, attraction_term, top_token_penalty, entropy_penalty
+    return loss
 
 def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
         tokenizer.padding_side = "left"
@@ -157,36 +210,56 @@ def train():
         alpha = 0.5
         beta = 0.5
         student_model.train()
-        teacher_model.eval()  # Teacher model doesn't need gradient updates
 
         total_loss = 0
-        for batch in train_dataloader:
+        epoch_start = time.time()
+
+        for step, batch in enumerate(train_dataloader):
             perplexity_metric = Perplexity().to(student_first_device)
+
             input_ids = batch["input_ids"].to(student_first_device)
             attention_mask = batch["attention_mask"].to(student_first_device)
             labels = input_ids.clone().detach()
 
-            # Calculate distillation loss
-            loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
-                        
-            # Backward pass
+            with torch.no_grad():
+                teacher_logits = teacher_model(
+                    input_ids.to(teacher_first_device),
+                    attention_mask=attention_mask.to(teacher_first_device)
+                ).logits
+
+            student_logits = student_model(
+                input_ids=input_ids,
+                attention_mask=attention_mask
+            ).logits
+
+            loss, kl, align, toptok, entropy = prototype_log_loss(
+                student_logits=student_logits,
+                teacher_logits=teacher_logits,
+                student_first_device=student_first_device,
+                return_components=True,
+            )
+
+            if step % 100 == 0:
+                print(
+                    f"Epoch {epoch} Step {step}: "
+                    f"Loss={loss.item():.2f} | KL={kl.item():.2f} | Align={align.item():.2f} | "
+                    f"TopTok={toptok.item():.4f} | Entropy={entropy.item():.2f}"
+                )
+
             optimizer.zero_grad()
-            loss.requires_grad_(True)
             loss.backward()
             optimizer.step()
-            
-            # Forward pass through the student model for perplexity calculation
-            outputs = student_model(input_ids=input_ids, attention_mask=attention_mask)
-            log_probs = F.log_softmax(outputs.logits, dim=-1).to(student_first_device)
-            perplexity_metric.update(log_probs, labels)
 
+            log_probs = F.log_softmax(student_logits, dim=-1)
+            perplexity_metric.update(log_probs, labels)
             total_loss += loss.item()
 
         epoch_loss = total_loss / len(train_dataloader)
-        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}")
+        epoch_time = time.time() - epoch_start
         perplexity_score = perplexity_metric.compute()
-        print(f"Perplexity: {perplexity_score}")  
-        
+
+        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}, Perplexity: {perplexity_score}, Time: {epoch_time:.2f}s")
+
         loss_history.append(epoch_loss)
         ppl_history.append(perplexity_score)
 
