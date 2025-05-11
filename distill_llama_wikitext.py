@@ -208,7 +208,7 @@ def train():
         teacher_model.eval()  # Teacher model doesn't need gradient updates
 
         total_loss = 0
-        for batch in train_dataloader:
+        for batch, step in train_dataloader:
             perplexity_metric = Perplexity().to(student_first_device)
             input_ids = batch["input_ids"].to(student_first_device)
             attention_mask = batch["attention_mask"].to(student_first_device)
@@ -216,10 +216,18 @@ def train():
 
             # Calculate distillation loss
             #loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
-            loss = prototype_log_loss(
+            loss, kl, align, toptok, entropy = prototype_log_loss(
                 student_logits=student_model(input_ids, attention_mask=attention_mask).logits,
                 teacher_logits=teacher_model(input_ids.to(teacher_first_device), attention_mask=attention_mask.to(teacher_first_device)).logits,
+                return_components=True,
             )
+            
+            if step % 100 == 0:
+                print(
+                    f"Epoch {epoch} Step {step}: "
+                    f"Loss={loss.item():.2f} | KL={kl.item():.2f} | Align={align.item():.2f} | "
+                    f"TopTok={toptok.item():.4f} | Entropy={entropy.item():.2f}"
+                )
                         
             # Backward pass
             optimizer.zero_grad()
