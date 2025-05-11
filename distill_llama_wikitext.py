@@ -1,4 +1,5 @@
 import os
+import time
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, GenerationConfig
 import torch
 import torch.nn.functional as F
