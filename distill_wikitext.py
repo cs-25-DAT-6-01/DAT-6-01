@@ -13,59 +13,6 @@ from sentence_transformers import SentenceTransformer
 from utility import plot_metrics
 from utility import filter_lines
 
-def new_new_distillation_loss(alpha, beta, student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):
-    tokenizer.padding_side = "left"
-    tokenizer.pad_token = tokenizer.eos_token
-
-    # Teacher-forced CE
-    with torch.no_grad():
-        # Forward pass through the teacher model
-        teacher_outputs = teacher(
-            input_ids=batch["input_ids"].to(teacher_first_device),
-            attention_mask=batch["attention_mask"].to(teacher_first_device)
-        )
-        teacher_logits = teacher_outputs.logits
-
-    # Forward pass through the student model
-    student_outputs = student(
-        input_ids=batch["input_ids"].to(student_first_device),
-        attention_mask=batch["attention_mask"].to(student_first_device)
-    )
-    student_logits = student_outputs.logits
-
-    # Cross-Entropy Loss (Teacher-forced)
-    shift_teacher_logits = teacher_logits[..., :-1, :].contiguous()
-    shift_labels = batch["input_ids"][..., 1:].contiguous().to(student_first_device)
-    min_len = min(shift_teacher_logits.size(1), shift_labels.size(1))
-    shift_teacher_logits = shift_teacher_logits[:, :min_len, :]
-    shift_labels = shift_labels[:, :min_len]
-    loss_ce = F.cross_entropy(shift_teacher_logits.reshape(-1, shift_teacher_logits.size(-1)).to(student_first_device), shift_labels.reshape(-1))
-
-    # Embedding MSE
-    with torch.no_grad():
-        teacher_embeddings = embedder.encode(
-            [tokenizer.decode(ids, skip_special_tokens=True) for ids in batch["input_ids"]],
-            convert_to_tensor=True
-        ).to(student_first_device)
-
-    student_embeddings = embedder.encode(
-        [tokenizer.decode(ids, skip_special_tokens=True) for ids in batch["input_ids"]],
-        convert_to_tensor=True
-    ).to(student_first_device)
-    loss_embed = F.mse_loss(student_embeddings, teacher_embeddings)
-
-    # Consistency CE
-    shift_student_logits = student_logits[..., :-1, :].contiguous()
-    min_len2 = min(shift_student_logits.size(1), shift_labels.size(1))
-    shift_student_logits = shift_student_logits[:, :min_len2, :]
-    shift_labels = shift_labels[:, :min_len2]
-    loss_consistency = F.cross_entropy(shift_student_logits.reshape(-1, shift_student_logits.size(-1)), shift_labels.reshape(-1))
-
-    # Combine losses
-    total_loss = loss_ce + alpha * loss_embed + beta * loss_consistency
-    return total_loss
-
-
 def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
         tokenizer.padding_side = "left"
         tokenizer.pad_token = tokenizer.eos_token

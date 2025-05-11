@@ -10,6 +10,57 @@ from sentence_transformers import SentenceTransformer
 from utility import plot_metrics
 from utility import filter_lines
 
+def prototype_log_loss(
+    student_logits,
+    teacher_logits,
+    epsilon=1e-6,
+    alpha=6.0,
+    lambd=0.5,
+    beta=0.5,
+    gamma=1.0,
+    temperature=3.0,
+    return_components=False,
+):
+    student_logits = student_logits / temperature
+    teacher_logits = teacher_logits / temperature
+    teacher_logits = teacher_logits.detach()
+
+    student_probs = F.softmax(student_logits, dim=-1)
+    teacher_probs = F.softmax(teacher_logits, dim=-1)
+
+    kl_term = (temperature**2) * F.kl_div(
+        torch.log(student_probs + epsilon), teacher_probs, reduction="batchmean"
+    )
+
+    dot = torch.sum(student_probs * teacher_probs, dim=-1)
+    student_norm = torch.norm(student_probs, dim=-1)
+    teacher_norm = torch.norm(teacher_probs, dim=-1)
+    cos_sim = dot / (student_norm * teacher_norm + epsilon)
+    attraction_term = torch.mean(torch.log(1 + cos_sim))
+
+    top_token_penalty = (
+        (
+            torch.max(teacher_probs, dim=-1).values
+            - torch.max(student_probs, dim=-1).values
+        )
+        .pow(2)
+        .mean()
+    )
+
+    entropy = -torch.sum(student_probs * torch.log(student_probs + epsilon), dim=-1)
+    entropy_penalty = entropy.mean()
+
+    loss = (
+        lambd * kl_term
+        - alpha * attraction_term
+        + beta * top_token_penalty
+        + gamma * entropy_penalty
+    )
+
+    if return_components:
+        return loss, kl_term, attraction_term, top_token_penalty, entropy_penalty
+    return loss
+
 
 def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device):    
         # Teacher-forced CE
@@ -57,6 +108,7 @@ def new_distillation_loss(alpha, beta,  student, teacher, tokenizer, embedder, g
 
         total_loss = loss_ce.to(student_first_device) + alpha * loss_embed.to(student_first_device) + beta * loss_consistency.to(student_first_device)
         return total_loss
+    
 
 def distillation_loss(student_logits, teacher_logits, true_labels, T, alpha):
     """
@@ -163,7 +215,11 @@ def train():
             labels = input_ids.clone().detach()
 
             # Calculate distillation loss
-            loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
+            #loss = new_distillation_loss(alpha, beta, student_model, teacher_model, teacher_tokenizer, embedder, gen_config, batch, student_first_device, teacher_first_device)
+            loss = prototype_log_loss(
+                student_logits=student_model(input_ids, attention_mask=attention_mask).logits,
+                teacher_logits=teacher_model(input_ids.to(teacher_first_device), attention_mask=attention_mask.to(teacher_first_device)).logits,
+            )
                         
             # Backward pass
             optimizer.zero_grad()
