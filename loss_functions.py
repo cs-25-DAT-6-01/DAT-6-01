@@ -7,23 +7,24 @@ def prototype_log_loss(
     teacher_logits,
     student_first_device,
     epsilon=1e-6,
-    alpha=6.0,
-    lambd=0.5,
-    beta=0.5,
-    gamma=1.0,
-    temperature=3.0,
+    alpha=1.0,
+    lambd=1.0,
+    beta=1.0,
+    gamma=1.7,
+    temperature=2,
     return_components=False,
 ):
     student_logits = student_logits / temperature
     teacher_logits = teacher_logits.detach() / temperature
 
-    student_probs = F.softmax(student_logits, dim=-1).to(student_first_device)
+    log_student_probs = F.log_softmax(student_logits, dim=-1).to(student_first_device)
     teacher_probs = F.softmax(teacher_logits, dim=-1).to(student_first_device)
 
     kl_term = (temperature**2) * F.kl_div(
-        torch.log(student_probs + epsilon), teacher_probs, reduction="batchmean"
+        log_student_probs, teacher_probs, reduction="batchmean"
     )
 
+    student_probs = log_student_probs.exp()  
     dot = torch.sum(student_probs * teacher_probs, dim=-1)
     student_norm = torch.norm(student_probs, dim=-1)
     teacher_norm = torch.norm(teacher_probs, dim=-1)
@@ -39,7 +40,7 @@ def prototype_log_loss(
         .mean()
     )
 
-    entropy = -torch.sum(student_probs * torch.log(student_probs + epsilon), dim=-1)
+    entropy = -torch.sum(student_probs * log_student_probs, dim=-1)
     entropy_penalty = entropy.mean()
 
     loss = (
