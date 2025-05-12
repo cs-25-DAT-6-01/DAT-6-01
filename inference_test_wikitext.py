@@ -16,7 +16,7 @@ amount_of_epochs = "10"
 alpha = "10"
 lambd = "0.2"
 beta = "0.5"
-gamma = "1"
+gamma = "1.0"
 temperature = "1.5"
 
 # Path to the trained model/tokenizer
