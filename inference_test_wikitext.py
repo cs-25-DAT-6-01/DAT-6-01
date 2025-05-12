@@ -12,12 +12,17 @@ from collections import defaultdict
 # Define file name and such
 model_name = "openai-community-gpt2"
 amount_of_epochs = "10"
-alpha = "0.5"
+alpha = "10"
+lambd = "0.2"
 beta = "0.5"
+gamma = "1"
+temperature = "1.5"
 
 # Path to the trained model/tokenizer
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}"
+#model_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
+#tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
 
 # Load the model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(model_path)

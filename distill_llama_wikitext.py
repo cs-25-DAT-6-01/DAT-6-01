@@ -32,6 +32,7 @@ def train():
 
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
+    teacher_tokenizer.padding_side = "left"
     teacher_model = AutoModelForCausalLM.from_pretrained(
         teacher_model_name,
         quantization_config=bnb_config,
@@ -43,6 +44,7 @@ def train():
 
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
     student_tokenizer.pad_token = student_tokenizer.eos_token
+    student_tokenizer.padding_side = "left"
     student_model = AutoModelForCausalLM.from_pretrained(
         student_model_name,
         quantization_config=bnb_config,
