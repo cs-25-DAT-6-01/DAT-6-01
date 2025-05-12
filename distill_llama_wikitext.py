@@ -164,7 +164,8 @@ def train():
         ppl_history.append(perplexity_score)
 
     model_name = student_model_name.replace("/", "-")
-    out_dir = f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
+    out_dir = f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}"
+    #out_dir = f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
 
     student_model.save_pretrained(out_dir)
     student_tokenizer.save_pretrained(out_dir)
