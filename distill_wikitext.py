@@ -207,11 +207,11 @@ def train():
 
     print("Starting training")
     for epoch in range(num_epochs):
-        alpha=6.0
-        lambd=0.5
+        alpha=10
+        lambd=0.2
         beta=0.5
         gamma=1.0
-        temperature=3.0
+        temperature=1.5
         student_model.train()
 
         total_loss = 0
