@@ -92,7 +92,7 @@ average_inference_time = total_inference_time / len(test_dataset)
 print("Average inference time (seconds):", average_inference_time)
 
 all_input_ids = torch.cat([example["input_ids"] for example in test_dataset])
-perplexity = perplexity(model, device)
+perplexity = perplexity(model, device, tokenizer)
 print("Perplexity:", perplexity.item())
 
 average_scores = {}
