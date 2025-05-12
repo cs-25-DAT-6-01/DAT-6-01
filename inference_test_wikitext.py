@@ -19,12 +19,8 @@ gamma = "1"
 temperature = "1.5"
 
 # Path to the trained model/tokenizer
-#model_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}"
-#model_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
-model_path = "model-openai-community-gpt2_epochs-10_wikitext_alpha-10_beta-0.5_lamb-0.2_gam-1.0_temp-1.5"
-#tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}"
-#tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
-tokenizer_path = "model-openai-community-gpt2_epochs-10_wikitext_alpha-10_beta-0.5_lamb-0.2_gam-1.0_temp-1.5"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lamb-{lambd}_gam-{gamma}_temp-{temperature}"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lamb-{lambd}_gam-{gamma}_temp-{temperature}"
 
 # Load the model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto", torch_dtype="auto", local_files_only=True)

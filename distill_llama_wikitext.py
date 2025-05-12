@@ -116,36 +116,19 @@ def train():
                 input_ids=input_ids, attention_mask=attention_mask
             ).logits
 
-            #loss, kl, align, toptok, entropy = prototype_log_loss(
-            #    student_logits=student_logits,
-            #    teacher_logits=teacher_logits,
-            #    student_first_device=student_first_device,
-            #    return_components=True,
-            #)
-            loss = new_distillation_loss(
-                alpha=alpha,
-                beta=beta,
-                student=student_model,
-                teacher=teacher_model,
-                tokenizer=student_tokenizer,
-                embedder=embedder,
-                gen_config=GenerationConfig(
-                    repetition_penalty=1.2,
-                    bos_token_id=student_tokenizer.bos_token_id,
-                    pad_token_id=student_tokenizer.pad_token_id,
-                ),
-                batch=batch,
+            loss, kl, align, toptok, entropy = prototype_log_loss(
+                student_logits=student_logits,
+                teacher_logits=teacher_logits,
                 student_first_device=student_first_device,
-                teacher_first_device=teacher_first_device,
+                return_components=True,
             )
 
 
             if step % 100 == 0:
                 print(
                     f"Epoch {epoch} Step {step}: "
-                    f"Loss={loss.item():.2f}"
-                    #f"Loss={loss.item():.2f} | KL={kl.item():.2f} | Align={align.item():.2f} | "
-                    #f"TopTok={toptok.item():.4f} | Entropy={entropy.item():.2f}"
+                    f"Loss={loss.item():.2f} | KL={kl.item():.2f} | Align={align.item():.2f} | "
+                    f"TopTok={toptok.item():.4f} | Entropy={entropy.item():.2f}"
                 )
 
             optimizer.zero_grad()
@@ -168,8 +151,7 @@ def train():
         ppl_history.append(perplexity_score)
 
     model_name = student_model_name.replace("/", "-")
-    out_dir = f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}"
-    #out_dir = f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
+    out_dir = f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lamb-{lambd}_gam-{gamma}_temp-{temperature}"
 
     student_model.save_pretrained(out_dir)
     student_tokenizer.save_pretrained(out_dir)
