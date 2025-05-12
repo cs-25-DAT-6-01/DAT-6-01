@@ -5,7 +5,7 @@ import torch
 from rouge_score import rouge_scorer
 from datasets import load_dataset
 from torch.utils.data import DataLoader
-from utility import perplexity
+from utility import perplexity_for_llama
 from utility import filter_lines
 from collections import defaultdict
 
@@ -91,7 +91,7 @@ average_inference_time = total_inference_time / len(test_dataset)
 print("Average inference time (seconds):", average_inference_time)
 
 all_input_ids = torch.cat([example["input_ids"] for example in test_dataset])
-perplexity = perplexity(model, device, tokenizer)
+perplexity = perplexity_for_llama(model, device, tokenizer)
 print("Perplexity:", perplexity.item())
 
 average_scores = {}
