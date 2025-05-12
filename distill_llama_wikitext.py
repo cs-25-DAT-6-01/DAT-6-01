@@ -15,7 +15,7 @@ from torcheval.metrics import Perplexity as Perplexity
 from sentence_transformers import SentenceTransformer
 from utility import plot_metrics
 from utility import filter_lines
-from loss_functions import prototype_log_loss
+from loss_functions import prototype_log_loss, new_distillation_loss
 
 
 def train():
@@ -28,6 +28,7 @@ def train():
 
     teacher_model_name = "meta-llama/Llama-3.1-8B"
     student_model_name = "meta-llama/Llama-3.2-1B"
+    embedder_model_name = "sentence-transformers/all-MiniLM-L6-v2"
 
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
@@ -49,6 +50,9 @@ def train():
         torch_dtype="auto",
     )
     student_model.config.pad_token_id = student_model.config.eos_token_id
+    
+    embedder = SentenceTransformer(embedder_model_name)
+    embedder.eval()
 
     train_dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
     train_dataset = train_dataset.map(
@@ -83,7 +87,7 @@ def train():
     ppl_history = []
 
     for epoch in range(num_epochs):
-        alpha = 5
+        alpha = 0.5
         lambd = 0.3
         beta = 0.5
         gamma = 0.7
@@ -110,18 +114,34 @@ def train():
                 input_ids=input_ids, attention_mask=attention_mask
             ).logits
 
-            loss, kl, align, toptok, entropy = prototype_log_loss(
-                student_logits=student_logits,
-                teacher_logits=teacher_logits,
+            #loss, kl, align, toptok, entropy = prototype_log_loss(
+            #    student_logits=student_logits,
+            #    teacher_logits=teacher_logits,
+            #    student_first_device=student_first_device,
+            #    return_components=True,
+            #)
+            loss = new_distillation_loss(
+                alpha=alpha,
+                beta=beta,
+                student=student_model,
+                teacher=teacher_model,
+                tokenizer=student_tokenizer,
+                embedder=embedder,
+                gen_config=GenerationConfig(
+                    max_length=128, do_sample=False, num_return_sequences=1
+                ),
+                batch=batch,
                 student_first_device=student_first_device,
-                return_components=True,
+                teacher_first_device=teacher_first_device,
             )
+
 
             if step % 100 == 0:
                 print(
                     f"Epoch {epoch} Step {step}: "
-                    f"Loss={loss.item():.2f} | KL={kl.item():.2f} | Align={align.item():.2f} | "
-                    f"TopTok={toptok.item():.4f} | Entropy={entropy.item():.2f}"
+                    f"Loss={loss.item():.2f}"
+                    #f"Loss={loss.item():.2f} | KL={kl.item():.2f} | Align={align.item():.2f} | "
+                    #f"TopTok={toptok.item():.4f} | Entropy={entropy.item():.2f}"
                 )
 
             optimizer.zero_grad()
