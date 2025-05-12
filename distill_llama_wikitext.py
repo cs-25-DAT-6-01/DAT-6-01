@@ -128,7 +128,9 @@ def train():
                 tokenizer=student_tokenizer,
                 embedder=embedder,
                 gen_config=GenerationConfig(
-                    max_length=128, do_sample=False, num_return_sequences=1
+                    repetition_penalty=1.2,
+                    bos_token_id=student_tokenizer.bos_token_id,
+                    pad_token_id=student_tokenizer.pad_token_id,
                 ),
                 batch=batch,
                 student_first_device=student_first_device,
