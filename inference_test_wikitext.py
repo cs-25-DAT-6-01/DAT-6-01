@@ -25,9 +25,9 @@ model_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alph
 tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
 
 # Load the model and tokenizer
-model = AutoModelForCausalLM.from_pretrained(model_path)
+model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto", torch_dtype="auto", local_files_only=True)
 
-tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 tokenizer.pad_token = tokenizer.eos_token
 
 # Set the device
