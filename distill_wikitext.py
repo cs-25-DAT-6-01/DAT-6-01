@@ -207,8 +207,11 @@ def train():
 
     print("Starting training")
     for epoch in range(num_epochs):
-        alpha = 0.5
-        beta = 0.5
+        alpha=6.0
+        lambd=0.5
+        beta=0.5
+        gamma=1.0
+        temperature=3.0
         student_model.train()
 
         total_loss = 0
@@ -266,13 +269,15 @@ def train():
     print("Saving model")
     # Save the student model and tokenizer
     model_name = student_model_name.replace("/", "-")
-    student_model.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}")
-    student_tokenizer.save_pretrained(f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}")
+    out_dir = f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
+    
+    student_model.save_pretrained(out_dir)
+    student_tokenizer.save_pretrained(out_dir)
     
     plot_metrics(
         metrics={"loss": loss_history, "perplexity": ppl_history},
         run_tag="wikitext",
-        out_dir=f"model-{model_name}_epochs-{num_epochs}_wikitext_alpha-{alpha}_beta-{beta}"
+        out_dir=out_dir
     )
 
 
