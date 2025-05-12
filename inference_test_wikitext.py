@@ -46,8 +46,8 @@ test_dataset = test_dataset.select(range(1000))
 # Tokenize the dataset
 def tokenize_function(examples):
     return {
-        "input_ids": tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True, max_length=512).input_ids,
-        "attention_mask": tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True, max_length=512).attention_mask,
+        "input_ids": tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True, max_length=128).input_ids,
+        "attention_mask": tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True, max_length=128).attention_mask,
         "text": examples['text']
     }
 
