@@ -90,6 +90,8 @@ def perplexity(model, device, tokenizer):
 def perplexity_for_llama(model, device, tokenizer):
     test = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
     encodings = tokenizer("\n\n".join(test["text"]), return_tensors="pt")
+    
+    first_device = list(model.hf_device_map.values())[0]
 
     max_length = model.config.max_position_embeddings
     stride = 512
@@ -102,8 +104,8 @@ def perplexity_for_llama(model, device, tokenizer):
     for begin_loc in range(0, seq_len, stride):
         end_loc = min(begin_loc + max_length, seq_len)
         trg_len = end_loc - prev_end_loc  # may be different from stride on last loop
-        input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device)
-        target_ids = input_ids.clone()
+        input_ids = encodings.input_ids[:, begin_loc:end_loc].to(first_device)
+        target_ids = input_ids.clone().to(first_device)
         target_ids[:, :-trg_len] = -100
 
         with torch.no_grad():
