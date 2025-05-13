@@ -94,7 +94,7 @@ def perplexity_for_llama(model, device, tokenizer):
     first_device = list(model.hf_device_map.values())[0]
 
     max_length = model.config.max_position_embeddings
-    stride = 512
+    stride = 128
     seq_len = encodings.input_ids.size(1)
     print(seq_len)
 
