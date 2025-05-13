@@ -66,8 +66,8 @@ total_score = defaultdict(list)
 first_device = list(model.hf_device_map.values())[0]
 
 for i in range(len(test_dataset)):
-    input_ids = test_dataset[i]["input_ids"].unsqueeze(0).to(device)
-    attention_mask = test_dataset[i]["attention_mask"].unsqueeze(0).to(device)
+    input_ids = test_dataset[i]["input_ids"].unsqueeze(0).to(first_device)
+    attention_mask = test_dataset[i]["attention_mask"].unsqueeze(0).to(first_device)
     reference_text = test_dataset[i]["text"]
     input_text = tokenizer.decode(input_ids[0], skip_special_tokens=True)
 
