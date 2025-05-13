@@ -4,73 +4,96 @@ import torch
 import os
 from huggingface_hub import login
 from rouge_score import rouge_scorer
+from datasets import load_dataset
+from utility import perplexity
+from utility import filter_lines
+from collections import defaultdict
 
 
 login(os.getenv("HF_TOKEN"))
-# Define file name and such
-model_name = "openai-community/gpt2-large"
+# Define model name and such
+model_name = "openai-community/gpt2"
 
 # Load the model and tokenizer
+model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torch_dtype="auto")
+
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token
-# teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-model = AutoModelForCausalLM.from_pretrained(model_name)
 
 # Set the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
 
-# Input text
-input_text = "what is the name of justin bieber brother?"
+print("Loading wikitext dataset")
+# Example: Load a dataset like "wikitext"
+test_dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
+test_dataset = test_dataset.map(lambda example: {'text': filter_lines(example['text'])})
+test_dataset = test_dataset.filter(lambda example: len(example['text']) > 0)
+test_dataset = test_dataset.select(range(1000))
 
-# Tokenize the input text
-inputs = tokenizer.encode_plus(
-    input_text,
-    return_tensors="pt",
-    #padding="max_length",
-    #truncation=True,
-    #max_length=150,
-    #pad_to_max_length=True,
-)
+# Tokenize the dataset
+def tokenize_function(examples):
+    return {
+        "input_ids": tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True, max_length=128).input_ids,
+        "attention_mask": tokenizer(examples['text'], return_tensors="pt", padding="max_length", truncation=True, max_length=128).attention_mask,
+        "text": examples['text']
+    }
 
-input_ids = inputs["input_ids"].to(device)
-attention_mask = inputs["attention_mask"].to(device)
+print("Starting tokenization")
+test_dataset = test_dataset.map(tokenize_function, batched=True)
+test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'text'])
+#test_dataloader = DataLoader(test_dataset, batch_size=4, num_workers=2, pin_memory=True)
 
-# Start time
-start_time = time.time()
-
-# Generate the output (prediction)
-# https://huggingface.co/docs/transformers//generation_strategies#generation-strategies
-output = model.generate(
-    input_ids,
-    attention_mask=attention_mask,
-    max_new_tokens=100,
-    #temperature=0.7,
-    #top_k=50,
-    #top_p=0.9,
-    repetition_penalty=1.3,
-    #do_sample=True,
-    use_cache=False,
-    kv_cache=None,
-)
-torch.cuda.synchronize()  # Synchronize CUDA to ensure all operations are complete
-# End time
-end_time = time.time()
-inference_time = end_time - start_time
-
-# Decode the output
-generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
-
-reference_text = ("Jazmyn Bieber"
-                  "Jaxon Bieber") # This will need to be updated.
+print(model)
+print("Memory used (MBs):", model.get_memory_footprint() / 1e6)
+model.eval()
 
 scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL', 'rougeLsum'], use_stemmer=True)
-scores = scorer.score(reference_text, generated_text)
+total_inference_time = 0
+total_score = defaultdict(list)
+for i in range(len(test_dataset)):
+    input_ids = test_dataset[i]["input_ids"].unsqueeze(0).to(device)
+    attention_mask = test_dataset[i]["attention_mask"].unsqueeze(0).to(device)
+    reference_text = test_dataset[i]["text"]
+    input_text = tokenizer.decode(input_ids[0], skip_special_tokens=True)
 
-# Print the generated text and time taken
-print("Text generated:", generated_text)
-print("Inference time (seconds):", inference_time)
-print("ROUGE-1:", scores['rouge1'])
-print("ROUGE-2:", scores['rouge2'])
-print("ROUGE-L:", scores['rougeL'])
-print("ROUGE-Lsum:", scores['rougeLsum'])
+    # Start time
+    start_time = time.time()
+    output = model.generate(
+        input_ids,
+        attention_mask=attention_mask,
+        use_cache=False,
+        kv_cache=None,
+    )
+    torch.cuda.synchronize()  # Synchronize CUDA to ensure all operations are complete before measuring time
+    # End time
+    end_time = time.time()
+    inference_time = end_time - start_time
+    total_inference_time += inference_time
+
+    new_output = tokenizer.decode(output[0], skip_special_tokens=True).replace(input_text, "")
+    score = scorer.score(reference_text, new_output)
+    for metric, score_values in score.items():
+        total_score[metric].append(score_values)
+
+average_inference_time = total_inference_time / len(test_dataset)
+print("Average inference time (seconds):", average_inference_time)
+
+all_input_ids = torch.cat([example["input_ids"] for example in test_dataset])
+perplexity = perplexity(model, device, tokenizer)
+print("Perplexity:", perplexity.item())
+
+average_scores = {}
+for metric, scores in total_score.items():
+    precisions = [score.precision for score in scores]
+    recalls = [score.recall for score in scores]
+    fmeasures = [score.fmeasure for score in scores]
+
+    average_scores[metric] = {
+        'precision': sum(precisions) / len(precisions),
+        'recall': sum(recalls) / len(recalls),
+        'fmeasure': sum(fmeasures) / len(fmeasures),
+    }
+
+# Print average scores
+for metric, avg_score in average_scores.items():
+    print(f"{metric}: precision={avg_score['precision']:.4f}, recall={avg_score['recall']:.4f}, fmeasure={avg_score['fmeasure']:.4f}")
