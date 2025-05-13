@@ -62,6 +62,9 @@ model.eval()
 scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL', 'rougeLsum'], use_stemmer=True)
 total_inference_time = 0
 total_score = defaultdict(list)
+
+first_device = list(model.hf_device_map.values())[0]
+
 for i in range(len(test_dataset)):
     input_ids = test_dataset[i]["input_ids"].unsqueeze(0).to(device)
     attention_mask = test_dataset[i]["attention_mask"].unsqueeze(0).to(device)
@@ -90,10 +93,6 @@ for i in range(len(test_dataset)):
 average_inference_time = total_inference_time / len(test_dataset)
 print("Average inference time (seconds):", average_inference_time)
 
-all_input_ids = torch.cat([example["input_ids"] for example in test_dataset])
-perplexity = perplexity_for_llama(model, device, tokenizer)
-print("Perplexity:", perplexity.item())
-
 average_scores = {}
 for metric, scores in total_score.items():
     precisions = [score.precision for score in scores]
@@ -105,7 +104,11 @@ for metric, scores in total_score.items():
         'recall': sum(recalls) / len(recalls),
         'fmeasure': sum(fmeasures) / len(fmeasures),
     }
-
+    
 # Print average scores
 for metric, avg_score in average_scores.items():
     print(f"{metric}: precision={avg_score['precision']:.4f}, recall={avg_score['recall']:.4f}, fmeasure={avg_score['fmeasure']:.4f}")
+
+all_input_ids = torch.cat([example["input_ids"] for example in test_dataset])
+perplexity = perplexity_for_llama(model, device, tokenizer)
+print("Perplexity:", perplexity.item())
