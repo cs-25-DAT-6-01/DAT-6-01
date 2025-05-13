@@ -92,7 +92,7 @@ def perplexity_for_llama(model, device, tokenizer):
     encodings = tokenizer("\n\n".join(test["text"]), return_tensors="pt")
 
     max_length = model.config.max_position_embeddings
-    stride = 256
+    stride = 512
     seq_len = encodings.input_ids.size(1)
     print(seq_len)
 
