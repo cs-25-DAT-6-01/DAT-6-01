@@ -89,11 +89,11 @@ def train():
     ppl_history = []
 
     for epoch in range(num_epochs):
-        alpha = 6
-        lambd = 0.5
-        beta = 0.5
-        gamma = 1
-        temperature = 3
+        alpha = 8
+        lambd = 0.7
+        beta = 0.3
+        gamma = 1.5
+        temperature = 2
         student_model.train()
 
         total_loss = 0
