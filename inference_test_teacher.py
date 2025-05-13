@@ -12,7 +12,7 @@ from collections import defaultdict
 
 login(os.getenv("HF_TOKEN"))
 # Define model name and such
-model_name = "openai-community/gpt2"
+model_name = "openai-community/gpt2-large"
 
 # Load the model and tokenizer
 model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torch_dtype="auto")
