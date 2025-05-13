@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 from datasets import load_dataset
 import re
+from torch.cuda.amp import autocast
 
 
 def plot_metrics(
@@ -46,13 +47,14 @@ def filter_lines(text):
   return '\n\n'.join(filtered_lines)
 
 def perplexity(model, device, tokenizer):
+    torch.cuda.empty_cache()
     test = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
     encodings = tokenizer("\n\n".join(test["text"]), return_tensors="pt")
 
     max_length = model.config.n_positions
     stride = 512
     seq_len = encodings.input_ids.size(1)
-    print(seq_len)
+    print(f"Total sequence length: {seq_len}")
 
     nll_sum = 0.0
     n_tokens = 0
@@ -65,12 +67,13 @@ def perplexity(model, device, tokenizer):
         target_ids[:, :-trg_len] = -100
 
         with torch.no_grad():
-            outputs = model(input_ids, labels=target_ids)
+            with autocast():
+                outputs = model(input_ids, labels=target_ids)
 
-            # loss is calculated using CrossEntropyLoss which averages over valid labels
-            # N.B. the model only calculates loss over trg_len - 1 labels, because it internally shifts the labels
-            # to the left by 1.
-            neg_log_likelihood = outputs.loss
+                # loss is calculated using CrossEntropyLoss which averages over valid labels
+                # N.B. the model only calculates loss over trg_len - 1 labels, because it internally shifts the labels
+                # to the left by 1.
+                neg_log_likelihood = outputs.loss
 
         # Accumulate the total negative log-likelihood and the total number of tokens
         num_valid_tokens = (target_ids != -100).sum().item()  # number of valid tokens in target_ids
@@ -93,10 +96,11 @@ def perplexity_for_llama(model, device, tokenizer):
     
     first_device = list(model.hf_device_map.values())[0]
 
-    max_length = model.config.max_position_embeddings
-    stride = 128
+    #max_length = model.config.max_position_embeddings
+    max_length = 1024
+    stride = 256
     seq_len = encodings.input_ids.size(1)
-    print(seq_len)
+    print(f"Total sequence length: {seq_len}")
 
     nll_sum = 0.0
     n_tokens = 0
