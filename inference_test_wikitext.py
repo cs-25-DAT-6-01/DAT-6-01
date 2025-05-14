@@ -70,6 +70,7 @@ for i in range(len(test_dataset)):
     output = model.generate(
         input_ids,
         attention_mask=attention_mask,
+        repetition_penalty=1.2,
         use_cache=False,
         kv_cache=None,
     )
