@@ -10,7 +10,6 @@ from utility import filter_lines
 from collections import defaultdict
 
 # Define file name and such
-gpt_model_name = "openai-community-gpt2"
 llama_model_name = "meta-llama-Llama-3.2-1B"
 amount_of_epochs = "10"
 alpha = "6"
