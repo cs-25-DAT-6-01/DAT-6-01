@@ -91,10 +91,10 @@ class SquadDataset(Dataset):
 def train():
     login(os.getenv("HF_TOKEN"))
 
-    student_model_name = "distilgpt2"
+    student_model_name = "openai-community/gpt2"
 
     teacher_model = GPT2LMHeadModel.from_pretrained("p208p2002/gpt2-squad-qg-hl")
-    student_model = AutoModelForCausalLM.from_pretrained("distilgpt2")
+    student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
     tokenizer = get_tokenizer("p208p2002/gpt2-squad-qg-hl")
 
     student_model.resize_token_embeddings(len(tokenizer))
