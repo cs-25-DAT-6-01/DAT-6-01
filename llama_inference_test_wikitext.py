@@ -12,11 +12,11 @@ from collections import defaultdict
 # Define file name and such
 llama_model_name = "meta-llama-Llama-3.2-1B"
 amount_of_epochs = "10"
-alpha = "6"
-lambd = "0.5"
-beta = "0.5"
-gamma = "1"
-temperature = "3"
+alpha = "8"
+lambd = "0.7"
+beta = "0.3"
+gamma = "1.5"
+temperature = "2"
 
 # Path to the trained model/tokenizer
 #model_path = f"model-{gpt_model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lamb-{lambd}_gam-{gamma}_temp-{temperature}"
