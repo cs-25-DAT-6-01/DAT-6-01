@@ -13,11 +13,11 @@ from collections import defaultdict
 gpt_model_name = "openai-community-gpt2"
 llama_model_name = "meta-llama-Llama-3.2-1B"
 amount_of_epochs = "10"
-alpha = "10"
-lambd = "0.2"
+alpha = "6"
+lambd = "0.5"
 beta = "0.5"
 gamma = "1.0"
-temperature = "1.5"
+temperature = "3"
 
 # Path to the trained model/tokenizer
 #model_path = f"model-{gpt_model_name}_epochs-{amount_of_epochs}_wikitext_alpha-{alpha}_beta-{beta}_lamb-{lambd}_gam-{gamma}_temp-{temperature}"
