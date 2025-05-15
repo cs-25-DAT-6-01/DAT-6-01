@@ -126,8 +126,8 @@ def train():
 
     optimizer = torch.optim.AdamW(student_model.parameters(), lr=5e-5)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    student_model.to(device)
-    teacher_model.to(device)
+    #student_model.to(device)
+    #teacher_model.to(device)
     num_epochs = 10
 
     # Plotting metrics
