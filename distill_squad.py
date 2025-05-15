@@ -93,8 +93,8 @@ def train():
 
     student_model_name = "openai-community/gpt2"
 
-    teacher_model = GPT2LMHeadModel.from_pretrained("p208p2002/gpt2-squad-qg-hl")
-    student_model = AutoModelForCausalLM.from_pretrained(student_model_name)
+    teacher_model = GPT2LMHeadModel.from_pretrained("p208p2002/gpt2-squad-qg-hl", device_map="auto", torch_dtype="auto")
+    student_model = AutoModelForCausalLM.from_pretrained(student_model_name, device_map="auto", torch_dtype="auto")
     tokenizer = get_tokenizer("p208p2002/gpt2-squad-qg-hl")
 
     student_model.resize_token_embeddings(len(tokenizer))
