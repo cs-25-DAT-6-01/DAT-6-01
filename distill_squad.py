@@ -136,11 +136,11 @@ def train():
 
     print("Starting training")
     for epoch in range(num_epochs):
-        alpha = 6
-        lambd = 0.5
+        alpha = 10
+        lambd = 0.2
         beta = 0.5
         gamma = 1
-        temperature = 3
+        temperature = 1.5
         student_model.train()
 
         total_loss = 0
@@ -194,7 +194,7 @@ def train():
         )
 
         loss_history.append(epoch_loss)
-        ppl_history.append(perplexity_score)
+        #ppl_history.append(perplexity_score)
 
     print("Saving model")
     # Save the student model and tokenizer
@@ -202,9 +202,10 @@ def train():
     out_dir = f"model-{model_name}_epochs-{num_epochs}_squad_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
 
     student_model.save_pretrained(out_dir)
+    tokenizer.save_pretrained(out_dir)
 
     plot_metrics(
-        metrics={"loss": loss_history, "perplexity": ppl_history},
+        metrics={"loss": loss_history},
         run_tag="squad",
         out_dir=out_dir,
     )
