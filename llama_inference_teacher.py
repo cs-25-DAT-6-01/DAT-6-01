@@ -12,7 +12,7 @@ from utility import perplexity_for_llama
 
 login(os.getenv("HF_TOKEN"))
 # Define file name and such
-model_name = "meta-llama/Llama-3.1-8B"
+model_name = "meta-llama/Llama-3.2-1B"
 
 bnb_config = BitsAndBytesConfig(
     load_in_8bit=True,
