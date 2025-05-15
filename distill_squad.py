@@ -60,7 +60,7 @@ def highlight_answer(context: str, answer: str) -> str:
 
 class SquadDataset(Dataset):
     def __init__(self, tokenizer):
-        self.data = load_dataset("squad")["train"].select(range(8000))
+        self.data = load_dataset("squad")["train"].select(range(10000))
         self.tokenizer = tokenizer
 
     def __getitem__(self, idx):
