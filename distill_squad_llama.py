@@ -100,7 +100,7 @@ def train():
     student_model_name = "meta-llama/Llama-3.2-1B"
     teacher_model_name = "meta-llama/Llama-3.1-8B"
 
-    teacher_model = GPT2LMHeadModel.from_pretrained(teacher_model_name, device_map="auto", torch_dtype="auto", quantization_config=bnb_config)
+    teacher_model = AutoModelForCausalLM.from_pretrained(teacher_model_name, device_map="auto", torch_dtype="auto", quantization_config=bnb_config)
     student_model = AutoModelForCausalLM.from_pretrained(student_model_name, device_map="auto", torch_dtype="auto", quantization_config=bnb_config)
     tokenizer = get_tokenizer(teacher_model_name)
 
