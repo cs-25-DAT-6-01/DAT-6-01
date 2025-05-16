@@ -139,7 +139,6 @@ def train():
 
     # Plotting metrics
     loss_history = []
-    ppl_history = []
 
     print("Starting training")
     for epoch in range(num_epochs):
@@ -154,11 +153,9 @@ def train():
         epoch_start = time.time()
 
         for step, batch in enumerate(train_dataloader):
-            perplexity_metric = Perplexity().to(student_first_device)
 
             input_ids = batch["input_ids"].to(student_first_device)
             attention_mask = batch["attention_mask"].to(student_first_device)
-            labels = input_ids.clone().detach()
 
             with torch.no_grad():
                 teacher_logits = teacher_model(
@@ -188,16 +185,13 @@ def train():
             loss.backward()
             optimizer.step()
 
-            log_probs = F.log_softmax(student_logits, dim=-1)
-            perplexity_metric.update(log_probs, labels)
             total_loss += loss.item()
 
         epoch_loss = total_loss / len(train_dataloader)
         epoch_time = time.time() - epoch_start
-        perplexity_score = perplexity_metric.compute()
 
         print(
-            f"Epoch [{epoch + 1}/{num_epochs}], Loss: {epoch_loss:.4f}, Perplexity: {perplexity_score}, Time: {epoch_time:.2f}s"
+            f"Epoch [{epoch + 1}/{num_epochs}], Loss: {epoch_loss:.4f}, Time: {epoch_time:.2f}s"
         )
 
         loss_history.append(epoch_loss)
