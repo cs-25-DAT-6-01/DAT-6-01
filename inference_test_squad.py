@@ -19,7 +19,6 @@ class TimingPipeline:
     def __init__(self, pipeline):
         self.pipeline = pipeline
         self.inference_times = []
-        self.task = "question-answering"
         
     def __call__(self, *args, **kwargs):
         start = time.time()
@@ -47,6 +46,7 @@ model = GPT2ForQuestionAnswering.from_pretrained(model_path, device_map="auto", 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, device_map="auto", local_files_only=True)
 
 qa_pipeline = pipeline(
+    task="question-answering",
     model=model,
     tokenizer=tokenizer,
 )
@@ -62,7 +62,7 @@ eval_results = qa_evaluator.compute(
     data=test_dataset,
     metric="squad",
     strategy="bootstrap",
-    n_resamples=30
+    n_resamples=15
 )
 
 inference_times = timed_qa_pipeline.inference_times
