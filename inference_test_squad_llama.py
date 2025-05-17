@@ -53,12 +53,12 @@ qa_pipeline = pipeline(
 
 test_dataset = load_dataset("squad", split="validation[:1000]")
 
-qa_evaluator = evaluator("question-answering")
-eval_results = qa_evaluator.compute(
-    model_or_pipeline=qa_pipeline,
-    data=test_dataset,
-    metric="squad"
-)
+#qa_evaluator = evaluator("question-answering")
+#eval_results = qa_evaluator.compute(
+#    model_or_pipeline=qa_pipeline,
+#    data=test_dataset,
+#    metric="squad"
+#)
 
 inference_times = []
 results = []
