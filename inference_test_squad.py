@@ -37,8 +37,8 @@ gamma = "1.5"
 temperature = "2"
 
 # Path to the trained model/tokenizer
-model_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lamb-{lambd}_gam-{gamma}_temp-{temperature}"
-tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lamb-{lambd}_gam-{gamma}_temp-{temperature}"
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lamb-{lambd}_gam-{gamma}_temperature-{temperature}"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lamb-{lambd}_gam-{gamma}_temperature-{temperature}"
 
 model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto", torch_dtype="auto", local_files_only=True)
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, device_map="auto", local_files_only=True)
