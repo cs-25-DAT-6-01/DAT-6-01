@@ -21,12 +21,25 @@ class TimingPipeline:
         self.inference_times = []
         
     def __call__(self, *args, **kwargs):
-        start = time.time()
-        result = self.pipeline(*args, **kwargs)
-        torch.cuda.synchronize()  # Ensure all CUDA operations are completed
-        end = time.time()
-        self.inference_times.append(end - start)
-        return result
+        is_batch = isinstance(args[0], list) if args else False
+        if is_batch:
+            batch = args[0]
+            results = []
+            for example in batch:
+                start = time.time()
+                result = self.pipeline(example)
+                torch.cuda.synchronize()
+                end = time.time()
+                self.inference_times.append(end - start)
+                results.append(result)
+            return results
+        else:
+            start = time.time()
+            result = self.pipeline(*args, **kwargs)
+            torch.cuda.synchronize()
+            end = time.time()
+            self.inference_times.append(end - start)
+            return result
     
     @property
     def task(self):
