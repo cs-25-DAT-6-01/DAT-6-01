@@ -19,7 +19,6 @@ class TimingPipeline:
     def __init__(self, pipeline):
         self.pipeline = pipeline
         self.inference_times = []
-        self.task = "question-answering"
 
     def __call__(self, *args, **kwargs):
         start = time.time()
