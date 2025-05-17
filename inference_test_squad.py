@@ -64,14 +64,13 @@ first_device = list(model.hf_device_map.values())[0]
 test_dataset = load_dataset("squad", split="validation[:1000]")
 
 eval_results = qa_evaluator.compute(
-    model_or_pipeline=timed_qa_pipeline,
+    model_or_pipeline=model,
     data=test_dataset,
     metric="squad",
     strategy="simple",
 )
 
 inference_times = timed_qa_pipeline.inference_times
-print("Inference times (seconds):", inference_times)
 average_inference_time = sum(inference_times) / len(inference_times)
 print("Average inference time (seconds):", average_inference_time)
 print("Evaluation results:", eval_results)
