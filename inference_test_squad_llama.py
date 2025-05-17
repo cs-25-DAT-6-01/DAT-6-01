@@ -45,11 +45,11 @@ tokenizer_path = model_path
 model = LlamaForCausalLM.from_pretrained(model_path, local_files_only=True, device_map="auto", torch_dtype="auto")
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 
-qa_pipeline = pipeline(
-    task="text-generation",
-    model=model,
-    tokenizer=tokenizer,
-)
+#qa_pipeline = pipeline(
+#    task="text-generation",
+#    model=model,
+#    tokenizer=tokenizer,
+#)
 
 test_dataset = load_dataset("squad", split="validation[:1000]")
 
@@ -64,17 +64,18 @@ inference_times = []
 results = []
 for example in test_dataset:
     prompt = f"Context: {example['context']}\nQuestion: {example['question']}\nAnswer:"
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     start = time.time()
-    output = qa_pipeline(prompt, max_new_tokens=64)
-    #_ = qa_pipeline(
-    #    question=example["question"],
-    #    context=example["context"],
-    #)
+    output_ids = model.generate(
+        **inputs,
+        max_new_tokens=64,
+    )
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     end = time.time()
     inference_times.append(end - start)
-    results.append(output[0]['generated_text'])
+    generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    results.append(generated_text)
 
 exact_matches = []
 f1_scores = []
