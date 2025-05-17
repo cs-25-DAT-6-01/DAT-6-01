@@ -27,6 +27,10 @@ class TimingPipeline:
         end = time.time()
         self.inference_times.append(end - start)
         return result
+    
+    @property
+    def task(self):
+        return self.pipeline.task
 
 
 # Define file name and such
