@@ -2,6 +2,7 @@ import os
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
+    GPT2ForQuestionAnswering
 )
 import torch
 import torch.nn.functional as F
@@ -26,6 +27,13 @@ class TimingPipeline:
         end = time.time()
         self.inference_times.append(end - start)
         return result
+    
+    @property
+    def task(self):
+        return self.pipeline.task
+    
+    def __getattr__(self, name):
+        return getattr(self.pipeline, name)
 
 # Define file name and such
 model_name = "openai-community-gpt2"
@@ -40,7 +48,7 @@ temperature = "2"
 model_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
 tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
 
-model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto", torch_dtype="auto", local_files_only=True)
+model = GPT2ForQuestionAnswering.from_pretrained(model_path, device_map="auto", torch_dtype="auto", local_files_only=True)
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, device_map="auto", local_files_only=True)
 
 qa_pipeline = pipeline(
