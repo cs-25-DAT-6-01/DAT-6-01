@@ -71,6 +71,7 @@ eval_results = qa_evaluator.compute(
 )
 
 inference_times = timed_qa_pipeline.inference_times
+print("Inference times (seconds):", inference_times)
 average_inference_time = sum(inference_times) / len(inference_times)
 print("Average inference time (seconds):", average_inference_time)
 print("Evaluation results:", eval_results)
