@@ -62,10 +62,11 @@ qa_evaluator = evaluator("question-answering")
 first_device = list(model.hf_device_map.values())[0]
 
 test_dataset = load_dataset("squad", split="validation[:1000]")
+print("Dataset size:", len(test_dataset))
+print(test_dataset[0])
 
 eval_results = qa_evaluator.compute(
-    model_or_pipeline=model,
-    tokenizer=tokenizer,
+    model_or_pipeline=qa_pipeline,
     data=test_dataset,
     metric="squad",
     strategy="simple",
