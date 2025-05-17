@@ -1,100 +1,99 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-"""
-Kør SQuAD-evaluation med timing på alle 1 000 eksempler.
-Forudsætter:
-  pip install transformers datasets evaluate torch --upgrade
-og at din fine-tunede model + tokenizer ligger lokalt i
-  model-<navn>_epochs-<n>_squad_alpha-<α>_beta-<β>_lambd-<λ>_gamma-<γ>_temperature-<T>
-"""
-
 import os
-import time
+from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2ForQuestionAnswering
 import torch
+import torch.nn.functional as F
 from datasets import load_dataset
-from transformers import (
-    GPT2ForQuestionAnswering,
-    AutoTokenizer,
-    pipeline,
-    Pipeline,
-)
+import torch.distributed as dist
 from evaluate import evaluator
 
+from torch.utils.data import Dataset, DataLoader
+from transformers import pipeline
 
-class TimingPipeline(Pipeline):
-    def __init__(self, wrapped_pipeline):
-        self.wrapped = wrapped_pipeline
+import time
+
+
+class TimingPipeline:
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
         self.inference_times = []
 
-        super().__init__(
-            model=wrapped_pipeline.model,
-            tokenizer=wrapped_pipeline.tokenizer,
-            task=wrapped_pipeline.task,
-            device=wrapped_pipeline.device,
-        )
-
-    def _call(self, *args, **kwargs):
-        start = time.time()
-        output = self.wrapped(*args, **kwargs)
-        if torch.cuda.is_available():
+    def __call__(self, *args, **kwargs):
+        is_batch = isinstance(args[0], list) if args else False
+        if is_batch:
+            batch = args[0]
+            start = time.time()
+            results = self.pipeline(batch)
             torch.cuda.synchronize()
-        self.inference_times.append(time.time() - start)
-        return output
+            end = time.time()
+            batch_time = end - start
+            # Distribute batch time equally to each example
+            per_example_time = batch_time / len(batch)
+            self.inference_times.extend([per_example_time] * len(batch))
+            return results
+        else:
+            start = time.time()
+            result = self.pipeline(*args, **kwargs)
+            torch.cuda.synchronize()
+            end = time.time()
+            self.inference_times.append(end - start)
+            return result
 
-    def __getattr__(self, item):
-        return getattr(self.wrapped, item)
+    @property
+    def task(self):
+        return self.pipeline.task
 
 
+# Define file name and such
 model_name = "openai-community-gpt2"
 amount_of_epochs = "10"
-alpha, lambd = "8", "0.7"
-beta, gamma = "0.3", "1.5"
+alpha = "8"
+lambd = "0.7"
+beta = "0.3"
+gamma = "1.5"
 temperature = "2"
 
-model_path = (
-    f"model-{model_name}_epochs-{amount_of_epochs}_squad_"
-    f"alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
-)
-tokenizer_path = model_path
+# Path to the trained model/tokenizer
+model_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
+tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
 
 model = GPT2ForQuestionAnswering.from_pretrained(
-    model_path,
-    device_map="auto",
-    torch_dtype="auto",
-    local_files_only=True,
+    model_path, device_map="auto", torch_dtype="auto", local_files_only=True
 )
 tokenizer = AutoTokenizer.from_pretrained(
-    tokenizer_path,
-    local_files_only=True,
+    tokenizer_path, device_map="auto", local_files_only=True
 )
 
 qa_pipeline = pipeline(
     task="question-answering",
     model=model,
     tokenizer=tokenizer,
-    doc_stride=128,
 )
-
 timed_qa_pipeline = TimingPipeline(qa_pipeline)
-
-test_dataset = load_dataset("squad", split="validation[:1000]")
 qa_evaluator = evaluator("question-answering")
 
+first_device = list(model.hf_device_map.values())[0]
+
+test_dataset = load_dataset("squad", split="validation[:1000]")
+
+
+def custom_predict(example):
+    result = timed_qa_pipeline(
+        {"context": example["context"], "question": example["question"]}
+    )
+    return {"id": example["id"], "prediction_text": result["answer"]}
+
+
 eval_results = qa_evaluator.compute(
-    model_or_pipeline=timed_qa_pipeline,
+    model_or_pipeline=custom_predict,
     data=test_dataset,
     metric="squad",
-    batch_size=16,
     strategy="bootstrap",
     n_resamples=15,
 )
 
 
-times = timed_qa_pipeline.inference_times
-print(f"Antal eksempler evalueret : {len(times)}")
-print(f"Gennemsnitlig latency     : {sum(times) / len(times):.4f} sek")
-print(f"Første 10 latencies       : {times[:10]}")
-print("\nEvaluation metrics:")
-for k, v in eval_results.items():
-    print(f"  {k:10s}: {v}")
+inference_times = timed_qa_pipeline.inference_times
+print("Inference times (seconds):", inference_times)
+average_inference_time = sum(inference_times) / len(inference_times)
+print("Average inference time (seconds):", average_inference_time)
+print("Evaluation results:", eval_results)
