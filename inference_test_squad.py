@@ -24,14 +24,14 @@ class TimingPipeline:
         is_batch = isinstance(args[0], list) if args else False
         if is_batch:
             batch = args[0]
-            results = []
-            for example in batch:
-                start = time.time()
-                result = self.pipeline(example)
-                torch.cuda.synchronize()
-                end = time.time()
-                self.inference_times.append(end - start)
-                results.append(result)
+            start = time.time()
+            results = self.pipeline(batch)
+            torch.cuda.synchronize()
+            end = time.time()
+            batch_time = (end - start)
+            # Distribute batch time equally to each example
+            per_example_time = batch_time / len(batch)
+            self.inference_times.extend([per_example_time] * len(batch))
             return results
         else:
             start = time.time()
