@@ -65,6 +65,7 @@ test_dataset = load_dataset("squad", split="validation[:1000]")
 
 eval_results = qa_evaluator.compute(
     model_or_pipeline=model,
+    tokenizer=tokenizer,
     data=test_dataset,
     metric="squad",
     strategy="simple",
