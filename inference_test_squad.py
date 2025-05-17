@@ -46,7 +46,7 @@ temperature = "2"
 model_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
 tokenizer_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
 
-model = GPT2ForQuestionAnswering.from_pretrained(model_path, device_map="auto", torch_dtype="auto", local_files_only=True)
+model = AutoModelForCausalLM.from_pretrained(model_path, device_map="auto", torch_dtype="auto", local_files_only=True)
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, device_map="auto", local_files_only=True)
 
 qa_pipeline = pipeline(
@@ -70,6 +70,7 @@ eval_results = qa_evaluator.compute(
 )
 
 inference_times = timed_qa_pipeline.inference_times
+print("Inference times (seconds):", inference_times)
 average_inference_time = sum(inference_times) / len(inference_times)
 print("Average inference time (seconds):", average_inference_time)
 print("Evaluation results:", eval_results)
