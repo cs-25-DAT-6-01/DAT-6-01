@@ -79,7 +79,8 @@ eval_results = qa_evaluator.compute(
     data=test_dataset,
     metric="squad",
     strategy="bootstrap",
-    n_resamples=15
+    n_resamples=15,
+    batch_size=8,
 )
 
 inference_times = timed_qa_pipeline.inference_times
