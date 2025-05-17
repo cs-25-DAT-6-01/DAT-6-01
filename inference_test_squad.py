@@ -19,6 +19,7 @@ class TimingPipeline:
     def __init__(self, pipeline):
         self.pipeline = pipeline
         self.inference_times = []
+        self.task = "question-answering"
 
     def __call__(self, *args, **kwargs):
         start = time.time()
@@ -62,14 +63,13 @@ qa_evaluator = evaluator("question-answering")
 first_device = list(model.hf_device_map.values())[0]
 
 test_dataset = load_dataset("squad", split="validation[:1000]")
-print("Dataset size:", len(test_dataset))
-print(test_dataset[0])
 
 eval_results = qa_evaluator.compute(
     model_or_pipeline=qa_pipeline,
     data=test_dataset,
     metric="squad",
-    strategy="simple",
+    strategy="bootstrap",
+    n_resamples=30
 )
 
 inference_times = timed_qa_pipeline.inference_times
