@@ -19,7 +19,8 @@ class TimingPipeline:
     def __init__(self, pipeline):
         self.pipeline = pipeline
         self.inference_times = []
-
+        self.task = "question-answering"
+        
     def __call__(self, *args, **kwargs):
         start = time.time()
         result = self.pipeline(*args, **kwargs)
@@ -27,13 +28,7 @@ class TimingPipeline:
         end = time.time()
         self.inference_times.append(end - start)
         return result
-    
-    @property
-    def task(self):
-        return self.pipeline.task
-    
-    def __getattr__(self, name):
-        return getattr(self.pipeline, name)
+
 
 # Define file name and such
 model_name = "openai-community-gpt2"
@@ -52,7 +47,6 @@ model = GPT2ForQuestionAnswering.from_pretrained(model_path, device_map="auto", 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, device_map="auto", local_files_only=True)
 
 qa_pipeline = pipeline(
-    "question-answering",
     model=model,
     tokenizer=tokenizer,
 )
@@ -72,7 +66,6 @@ eval_results = qa_evaluator.compute(
 )
 
 inference_times = timed_qa_pipeline.inference_times
-print("Inference times (seconds):", inference_times)
 average_inference_time = sum(inference_times) / len(inference_times)
 print("Average inference time (seconds):", average_inference_time)
 print("Evaluation results:", eval_results)
