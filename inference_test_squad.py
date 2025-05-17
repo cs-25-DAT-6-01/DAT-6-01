@@ -36,12 +36,11 @@ eval_results = qa_evaluator.compute(
 
 inference_times = []
 for example in test_dataset:
-    input_data = {
-        "question": example["question"],
-        "context": example["context"]
-    }
     start = time.time()
-    _ = qa_pipeline(input_data)
+    _ = qa_pipeline(
+        question=example["question"],
+        context=example["context"],
+    )
     if torch.cuda.is_available():
         torch.cuda.synchronize()
     end = time.time()
