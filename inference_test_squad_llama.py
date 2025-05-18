@@ -63,7 +63,7 @@ test_dataset = load_dataset("squad", split="validation[:1000]")
 inference_times = []
 results = []
 for example in test_dataset:
-    prompt = f"Context: {example['context']}\nAnswer: {example['answers']}\nQuestion:"
+    prompt = f"Context: {example['context']}\nAnswer: {example['answers']["text"]}\nQuestion:"
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     start = time.time()
     output_ids = model.generate(
@@ -75,6 +75,10 @@ for example in test_dataset:
     end = time.time()
     inference_times.append(end - start)
     generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    if "Question:" in generated_text:
+        generated_question = generated_text.split("Question:")[-1].strip()
+    else:
+        generated_question = generated_text.strip()
     print(f"Generated text: {generated_text}")
     results.append(generated_text)
 
