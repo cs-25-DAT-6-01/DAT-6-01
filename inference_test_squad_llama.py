@@ -63,7 +63,7 @@ test_dataset = load_dataset("squad", split="validation[:1000]")
 inference_times = []
 results = []
 for example in test_dataset:
-    prompt = f"Context: {example['context']}\nQuestion: {example['question']}\nAnswer:"
+    prompt = f"Context: {example['context']}\nAnswer: {example['answer']}\nQuestion:"
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     start = time.time()
     output_ids = model.generate(
@@ -80,7 +80,7 @@ for example in test_dataset:
 exact_matches = []
 f1_scores = []
 for example, pred in zip(test_dataset, results):
-    true_answer = example["answers"]["text"][0] if example["answers"]["text"] else ""
+    true_answer = example["questions"]["text"][0] if example["questions"]["text"] else ""
     exact_matches.append(compute_exact(pred, true_answer))
     f1_scores.append(compute_f1(pred, true_answer))
 

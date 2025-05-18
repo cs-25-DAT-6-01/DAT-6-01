@@ -38,8 +38,8 @@ inference_times = []
 for example in test_dataset:
     start = time.time()
     _ = qa_pipeline(
-        question=example["question"],
         context=example["context"],
+        answer=example["answer"],
     )
     if torch.cuda.is_available():
         torch.cuda.synchronize()
