@@ -22,7 +22,7 @@ qa_pipeline = pipeline(
     task="question-answering",
     model=model,
     tokenizer=tokenizer,
-    device=0 if torch.cuda.is_available() else -1
+    #device=0 if torch.cuda.is_available() else -1
 )
 
 test_dataset = load_dataset("squad", split="validation[:1000]")
