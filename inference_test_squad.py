@@ -1,10 +1,10 @@
 import time
 import torch
-from transformers import pipeline, AutoTokenizer, GPT2ForQuestionAnswering
+from transformers import pipeline, AutoTokenizer, GPT2ForQuestionAnswering, LlamaForCausalLM
 from datasets import load_dataset
 from evaluate import evaluator
 
-model_name = "openai-community-gpt2"
+model_name = "meta-llama-Llama-3.2-1B"
 amount_of_epochs = "10"
 alpha = "8"
 lambd = "0.7"
@@ -15,7 +15,7 @@ temperature = "2"
 model_path = f"model-{model_name}_epochs-{amount_of_epochs}_squad_alpha-{alpha}_beta-{beta}_lambd-{lambd}_gamma-{gamma}_temperature-{temperature}"
 tokenizer_path = model_path
 
-model = GPT2ForQuestionAnswering.from_pretrained(model_path, local_files_only=True)
+model = LlamaForCausalLM.from_pretrained(model_path, local_files_only=True, device_map="auto", torch_dtype="auto")
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, local_files_only=True)
 
 qa_pipeline = pipeline(
