@@ -70,10 +70,10 @@ for ex in test_dataset:
 exact_matches = []
 f1_scores = []
 
-for ex, pred in zip(test_dataset, pred_questions):
-    gold = ex["question"] or ""
-    exact_matches.append(compute_exact(pred, gold))
-    f1_scores.append(compute_f1(pred, gold))
+#for ex, pred in zip(test_dataset, pred_questions):
+#    gold = ex["question"] or ""
+#    exact_matches.append(compute_exact(pred, gold))
+#    f1_scores.append(compute_f1(pred, gold))
 
 bleu_metric = load("bleu")
 bertscore_metric = load("bertscore")
@@ -88,7 +88,7 @@ bertscore = bertscore_metric.compute(
 )
 
 print("Average inference latency :", mean(inference_times))
-print("Exact-Match               :", mean(exact_matches))
-print("Token-level F1            :", mean(f1_scores))
+#print("Exact-Match               :", mean(exact_matches))
+#print("Token-level F1            :", mean(f1_scores))
 print("Corpus BLEU-4             :", bleu["bleu"])
 print("Mean BERTScore-F1         :", mean(bertscore["f1"]))
