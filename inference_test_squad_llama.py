@@ -63,7 +63,7 @@ test_dataset = load_dataset("squad", split="validation[:1000]")
 inference_times = []
 results = []
 for example in test_dataset:
-    prompt = f"Context: {example['context']}\nAnswer: {example['answer']}\nQuestion:"
+    prompt = f"Context: {example['context']}\nAnswer: {example['answers']}\nQuestion:"
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     start = time.time()
     output_ids = model.generate(

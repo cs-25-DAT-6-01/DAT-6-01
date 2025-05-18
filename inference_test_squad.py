@@ -39,7 +39,7 @@ for example in test_dataset:
     start = time.time()
     _ = qa_pipeline(
         context=example["context"],
-        answer=example["answer"],
+        answer=example["answers"],
     )
     if torch.cuda.is_available():
         torch.cuda.synchronize()
