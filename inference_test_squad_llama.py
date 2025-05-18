@@ -80,7 +80,7 @@ for example in test_dataset:
 exact_matches = []
 f1_scores = []
 for example, pred in zip(test_dataset, results):
-    true_answer = example["question"]["text"][0] if example["question"]["text"] else ""
+    true_answer = example["question"] if example["question"] else ""
     exact_matches.append(compute_exact(pred, true_answer))
     f1_scores.append(compute_f1(pred, true_answer))
 
