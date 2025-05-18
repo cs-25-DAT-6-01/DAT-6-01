@@ -75,14 +75,15 @@ for example in test_dataset:
     end = time.time()
     inference_times.append(end - start)
     generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    print(f"Generated text: {generated_text}")
     results.append(generated_text)
 
 exact_matches = []
 f1_scores = []
 for example, pred in zip(test_dataset, results):
     true_answer = example["question"] if example["question"] else ""
-    print(f"True answer: {true_answer}")
-    print(f"Predicted answer: {pred}")
+    #print(f"True answer: {true_answer}")
+    #print(f"Predicted answer: {pred}")
     exact_matches.append(compute_exact(pred, true_answer))
     f1_scores.append(compute_f1(pred, true_answer))
 
