@@ -46,8 +46,8 @@ model = AutoModelForCausalLM.from_pretrained(
     MODEL_PATH, local_files_only=True, device_map="auto", torch_dtype="auto"
 )
 #model = AutoModelForCausalLM.from_pretrained(teacher_name, device_map="auto", torch_dtype="auto")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
-#tokenizer = AutoTokenizer.from_pretrained(teacher_name, local_files_only=True)
+#tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
+tokenizer = AutoTokenizer.from_pretrained(teacher_name, local_files_only=True)
 
 test_dataset = load_dataset("squad", split="validation[:1000]")
 
