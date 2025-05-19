@@ -41,7 +41,7 @@ bnb_config = BitsAndBytesConfig(
     )
 
 MODEL_NAME = "meta-llama-Llama-3.2-1B"
-teacher_name = "meta-llama/Llama-3.1-8B"
+teacher_name = "meta-llama/Llama-3.2-1B"
 EPOCHS = 10
 ALPHA, LAMBDA, BETA, GAMMA, TEMP = 8, 0.7, 0.3, 1.5, 2
 
