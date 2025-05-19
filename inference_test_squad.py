@@ -35,7 +35,7 @@ def compute_f1(a_pred, a_true):
 MODEL_NAME = "openai-community-gpt2"
 teacher_name = "openai-community/gpt2"
 EPOCHS = 10
-ALPHA, LAMBDA, BETA, GAMMA, TEMP = 6, 0.5, 0.5, 1, 3
+ALPHA, LAMBDA, BETA, GAMMA, TEMP = 10, 0.2, 0.5, 1, 1.5
 
 MODEL_PATH = (
     f"model-{MODEL_NAME}_epochs-{EPOCHS}_squad_"
@@ -46,8 +46,8 @@ model = AutoModelForCausalLM.from_pretrained(
     MODEL_PATH, local_files_only=True, device_map="auto", torch_dtype="auto"
 )
 #model = AutoModelForCausalLM.from_pretrained(teacher_name, device_map="auto", torch_dtype="auto")
-#tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
-tokenizer = AutoTokenizer.from_pretrained(teacher_name, local_files_only=True)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
+#tokenizer = AutoTokenizer.from_pretrained(teacher_name, local_files_only=True)
 
 test_dataset = load_dataset("squad", split="validation[:1000]")
 
