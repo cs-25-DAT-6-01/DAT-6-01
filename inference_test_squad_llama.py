@@ -8,33 +8,31 @@ from datasets import load_dataset
 from evaluate import load
 
 
-def _normalize(text: str) -> str:
-    def remove_articles(t):
-        return " ".join(w for w in t.split() if w.lower() not in {"a", "an", "the"})
+def normalize_answer(s):
+    """Lower text and remove punctuation, articles and extra whitespace."""
+    def remove_articles(text):
+        return ' '.join([w for w in text.split() if w.lower() not in ('a', 'an', 'the')])
+    def white_space_fix(text):
+        return ' '.join(text.split())
+    def remove_punc(text):
+        exclude = set(string.punctuation)
+        return ''.join(ch for ch in text if ch not in exclude)
+    def lower(text):
+        return text.lower()
+    return white_space_fix(remove_articles(remove_punc(lower(s))))
 
-    def white_space_fix(t):
-        return " ".join(t.split())
+def compute_exact(a_pred, a_true):
+    return int(normalize_answer(a_pred) == normalize_answer(a_true))
 
-    def remove_punc(t):
-        table = str.maketrans("", "", string.punctuation)
-        return t.translate(table)
-
-    return white_space_fix(remove_articles(remove_punc(text.lower())))
-
-
-def compute_exact(pred: str, truth: str) -> int:
-    return int(_normalize(pred) == _normalize(truth))
-
-
-def compute_f1(pred: str, truth: str) -> float:
-    pred_tokens = _normalize(pred).split()
-    truth_tokens = _normalize(truth).split()
-    common = set(pred_tokens) & set(truth_tokens)
+def compute_f1(a_pred, a_true):
+    pred_tokens = normalize_answer(a_pred).split()
+    true_tokens = normalize_answer(a_true).split()
+    common = set(pred_tokens) & set(true_tokens)
     if not common:
-        return 0.0
-    precision = len(common) / len(pred_tokens)
-    recall = len(common) / len(truth_tokens)
-    return 2 * precision * recall / (precision + recall)
+        return 0
+    prec = len(common) / len(pred_tokens)
+    rec = len(common) / len(true_tokens)
+    return 2 * prec * rec / (prec + rec)
 
 
 bnb_config = BitsAndBytesConfig(
@@ -63,42 +61,37 @@ tokenizer.pad_token = tokenizer.eos_token
 test_dataset = load_dataset("squad", split="validation[:1000]")
 
 inference_times = []
-pred_questions = []
+results = []
 
-for ex in test_dataset:
-    prompt = f"Context: {ex['context']}\nAnswer: {ex['answers']['text']}\nQuestion:"
+for example in test_dataset:
+    prompt = f"Context: {example['context']}\nAnswer: {example['answers']['text']}\nQuestion:"
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     start = time.time()
-    output_ids = model.generate(**inputs, max_new_tokens=64)
+    output_ids = model.generate(
+        **inputs,
+        max_new_tokens=64,
+    )
     if torch.cuda.is_available():
         torch.cuda.synchronize()
-    inference_times.append(time.time() - start)
-    generated = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-    question = generated.split("Question:")[-1].strip()
-    pred_questions.append(question)
+    end = time.time()
+    inference_times.append(end - start)
+    generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    if "Question:" in generated_text:
+        generated_question = generated_text.split("Question:")[-1].strip()
+    else:
+        generated_question = generated_text.strip()
+    print(f"Generated text: {generated_question}")
+    results.append(generated_question)
 
 exact_matches = []
 f1_scores = []
 
-for ex, pred in zip(test_dataset, pred_questions):
-    exact_references = ex["question"] or ""
-    exact_matches.append(compute_exact(pred, exact_matches))
-    f1_scores.append(compute_f1(pred, exact_matches))
+for example, pred in zip(test_dataset, results):
+    true_answer = example["question"] if example["question"] else ""
+    exact_matches.append(compute_exact(pred, true_answer))
+    f1_scores.append(compute_f1(pred, true_answer))
 
-#bleu_metric = load("bleu")
-#bertscore_metric = load("bertscore")
-
-#references = [ex["question"] or "" for ex in test_dataset]
-
-#bleu = bleu_metric.compute(
-#    predictions=pred_questions, references=[[ref] for ref in references]
-#)
-#bertscore = bertscore_metric.compute(
-#    predictions=pred_questions, references=references, lang="en", batch_size=32
-#)
 
 print("Average inference latency :", mean(inference_times))
 print("Exact-Match               :", mean(exact_matches))
 print("Token-level F1            :", mean(f1_scores))
-#print("Corpus BLEU-4             :", bleu["bleu"])
-#print("Mean BERTScore-F1         :", mean(bertscore["f1"]))
