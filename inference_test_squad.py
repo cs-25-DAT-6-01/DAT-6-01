@@ -3,7 +3,7 @@ import string
 import torch
 
 from statistics import mean
-from transformers import AutoTokenizer, GPT2ForQuestionAnswering
+from transformers import AutoTokenizer, GPT2ForCausalLM
 from datasets import load_dataset
 
 def normalize_answer(s):
@@ -42,10 +42,10 @@ MODEL_PATH = (
     f"alpha-{ALPHA}_beta-{BETA}_lambd-{LAMBDA}_gamma-{GAMMA}_temperature-{TEMP}"
 )
 
-#model = GPT2ForQuestionAnswering.from_pretrained(
+#model = GPT2ForCausalLM.from_pretrained(
 #    MODEL_PATH, local_files_only=True, device_map="auto", torch_dtype="auto"
 #)
-model = GPT2ForQuestionAnswering.from_pretrained(teacher_name, device_map="auto", torch_dtype="auto")
+model = GPT2ForCausalLM.from_pretrained(teacher_name, device_map="auto", torch_dtype="auto")
 #tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
 tokenizer = AutoTokenizer.from_pretrained(teacher_name, local_files_only=True)
 
