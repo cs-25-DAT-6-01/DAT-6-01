@@ -45,7 +45,7 @@ MODEL_PATH = (
 #model = GPT2ForQuestionAnswering.from_pretrained(
 #    MODEL_PATH, local_files_only=True, device_map="auto", torch_dtype="auto"
 #)
-model = GPT2ForQuestionAnswering.from_pretrained(teacher_name, device_map="auto", torch_dtype="auto", quantization_config=bnb_config)
+model = GPT2ForQuestionAnswering.from_pretrained(teacher_name, device_map="auto", torch_dtype="auto")
 #tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
 tokenizer = AutoTokenizer.from_pretrained(teacher_name, local_files_only=True)
 
