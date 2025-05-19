@@ -43,7 +43,7 @@ bnb_config = BitsAndBytesConfig(
 MODEL_NAME = "meta-llama-Llama-3.2-1B"
 teacher_name = "meta-llama/Llama-3.2-1B"
 EPOCHS = 10
-ALPHA, LAMBDA, BETA, GAMMA, TEMP = 10, 0.2, 0.5, 1, 1.5
+ALPHA, LAMBDA, BETA, GAMMA, TEMP = 8, 0.7, 0.3, 1.5, 2
 
 MODEL_PATH = (
     f"model-{MODEL_NAME}_epochs-{EPOCHS}_squad_"
@@ -56,7 +56,6 @@ model = LlamaForCausalLM.from_pretrained(
 #model = LlamaForCausalLM.from_pretrained(teacher_name, device_map="auto", torch_dtype="auto", quantization_config=bnb_config)
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
 #tokenizer = AutoTokenizer.from_pretrained(teacher_name, local_files_only=True)
-tokenizer.pad_token = tokenizer.eos_token
 
 test_dataset = load_dataset("squad", split="validation[:1000]")
 
