@@ -33,9 +33,9 @@ def compute_f1(a_pred, a_true):
     return 2 * prec * rec / (prec + rec)
 
 MODEL_NAME = "openai-community-gpt2"
-teacher_name = "openai-community/gpt2-large"
+teacher_name = "openai-community/gpt2"
 EPOCHS = 10
-ALPHA, LAMBDA, BETA, GAMMA, TEMP = 6, 0.2, 0.5, 1, 1.5
+ALPHA, LAMBDA, BETA, GAMMA, TEMP = 10, 0.2, 0.5, 1, 1.5
 
 MODEL_PATH = (
     f"model-{MODEL_NAME}_epochs-{EPOCHS}_squad_"
