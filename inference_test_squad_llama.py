@@ -3,7 +3,7 @@ import string
 from statistics import mean
 
 import torch
-from transformers import AutoTokenizer, LlamaForCausalLM
+from transformers import AutoTokenizer, LlamaForCausalLM, BitsAndBytesConfig
 from datasets import load_dataset
 from evaluate import load
 
@@ -37,18 +37,28 @@ def compute_f1(pred: str, truth: str) -> float:
     return 2 * precision * recall / (precision + recall)
 
 
+bnb_config = BitsAndBytesConfig(
+        load_in_8bit=True,
+        llm_int8_enable_fp32_cpu_offload=True,
+    )
+
 MODEL_NAME = "meta-llama-Llama-3.2-1B"
+teacher_name = "meta-llama/Llama-3.1-8B"
 EPOCHS = 10
 ALPHA, LAMBDA, BETA, GAMMA, TEMP = 8, 0.7, 0.3, 1.5, 2
+
 MODEL_PATH = (
     f"model-{MODEL_NAME}_epochs-{EPOCHS}_squad_"
     f"alpha-{ALPHA}_beta-{BETA}_lambd-{LAMBDA}_gamma-{GAMMA}_temperature-{TEMP}"
 )
 
-model = LlamaForCausalLM.from_pretrained(
-    MODEL_PATH, local_files_only=True, device_map="auto", torch_dtype="auto"
-)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
+#model = LlamaForCausalLM.from_pretrained(
+#    MODEL_PATH, local_files_only=True, device_map="auto", torch_dtype="auto"
+#)
+model = LlamaForCausalLM.from_pretrained(teacher_name, device_map="auto", torch_dtype="auto", quantization_config=bnb_config)
+#tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
+tokenizer = AutoTokenizer.from_pretrained(teacher_name, local_files_only=True)
+tokenizer.pad_token = tokenizer.eos_token
 
 test_dataset = load_dataset("squad", split="validation[:1000]")
 
@@ -70,25 +80,25 @@ for ex in test_dataset:
 exact_matches = []
 f1_scores = []
 
-#for ex, pred in zip(test_dataset, pred_questions):
-#    gold = ex["question"] or ""
-#    exact_matches.append(compute_exact(pred, gold))
-#    f1_scores.append(compute_f1(pred, gold))
+for ex, pred in zip(test_dataset, pred_questions):
+    exact_references = ex["question"] or ""
+    exact_matches.append(compute_exact(pred, exact_matches))
+    f1_scores.append(compute_f1(pred, exact_matches))
 
-bleu_metric = load("bleu")
-bertscore_metric = load("bertscore")
+#bleu_metric = load("bleu")
+#bertscore_metric = load("bertscore")
 
-references = [ex["question"] or "" for ex in test_dataset]
+#references = [ex["question"] or "" for ex in test_dataset]
 
-bleu = bleu_metric.compute(
-    predictions=pred_questions, references=[[ref] for ref in references]
-)
-bertscore = bertscore_metric.compute(
-    predictions=pred_questions, references=references, lang="en", batch_size=32
-)
+#bleu = bleu_metric.compute(
+#    predictions=pred_questions, references=[[ref] for ref in references]
+#)
+#bertscore = bertscore_metric.compute(
+#    predictions=pred_questions, references=references, lang="en", batch_size=32
+#)
 
 print("Average inference latency :", mean(inference_times))
-#print("Exact-Match               :", mean(exact_matches))
-#print("Token-level F1            :", mean(f1_scores))
-print("Corpus BLEU-4             :", bleu["bleu"])
-print("Mean BERTScore-F1         :", mean(bertscore["f1"]))
+print("Exact-Match               :", mean(exact_matches))
+print("Token-level F1            :", mean(f1_scores))
+#print("Corpus BLEU-4             :", bleu["bleu"])
+#print("Mean BERTScore-F1         :", mean(bertscore["f1"]))
