@@ -80,7 +80,7 @@ for example in test_dataset:
         generated_question = generated_text.split("Question:")[-1].strip()
     else:
         generated_question = generated_text.strip()
-    print(f"Generated text: {generated_question}")
+    #print(f"Generated text: {generated_question}")
     results.append(generated_question)
 
 exact_matches = []
