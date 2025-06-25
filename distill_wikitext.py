@@ -18,15 +18,18 @@ from loss_functions import prototype_log_loss
 
 
 def train():
+    # Login to Hugging Face Hub
     login(os.getenv("HF_TOKEN"))
 
     print("Loading openai-community/gpt2-large")
-    # Load the pre-trained openai-community/gpt2-large (teacher)
+    # Load the teacher model (large GPT-2)
     teacher_model_name = "openai-community/gpt2-large"
     teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_model_name)
+    # Set the pad token to the end-of-sequence token if not already set
     teacher_tokenizer.pad_token = teacher_tokenizer.eos_token
+    # Set the padding side to left for the tokenizer
     teacher_tokenizer.padding_side = "left"
-    # teacher_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    # Load model with automatic device mapping and dtype
     teacher_model = AutoModelForCausalLM.from_pretrained(
         teacher_model_name, device_map="auto", torch_dtype="auto"
     )
@@ -34,24 +37,28 @@ def train():
     print("Loading gpt2 model")
     # Load the pre-trained "openai-community/gpt2" model (student)
     student_model_name = "openai-community/gpt2"
+    # Load the tokenizer for the student model
     student_tokenizer = AutoTokenizer.from_pretrained(student_model_name)
+    # Set the pad token to the end-of-sequence token if not already set
     student_tokenizer.pad_token = student_tokenizer.eos_token
+    # Set the padding side to left for the tokenizer
     student_tokenizer.padding_side = "left"
-    # student_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    # Load the student model with automatic device mapping and dtype
     student_model = AutoModelForCausalLM.from_pretrained(
         student_model_name, device_map="auto", torch_dtype="auto"
     )
 
     print("Loading wikitext dataset")
-    # Example: Load a dataset like "wikitext"
+    # Load the wikitext dataset
     train_dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
+    # Filter out empty lines and limit the dataset size for faster training
     train_dataset = train_dataset.map(
         lambda example: {"text": filter_lines(example["text"])}
     )
+    # Filter out empty examples
     train_dataset = train_dataset.filter(lambda example: len(example["text"]) > 0)
+    # Limit the dataset size for faster training
     train_dataset = train_dataset.select(range(10000))
-    # train_dataset = dataset["train"]
-    # test_dataset = dataset["test"]
 
     # Tokenize the dataset
     def tokenize_function(examples):
@@ -64,18 +71,18 @@ def train():
         )
 
     print("Starting tokenization")
+    # Tokenize the training dataset
     train_dataset = train_dataset.map(tokenize_function, batched=True)
-    # test_dataset = test_dataset.map(tokenize_function, batched=True)
 
+    # Set the format for the dataset to PyTorch tensors
     train_dataset.set_format(type="torch", columns=["input_ids", "attention_mask"])
-    # test_dataset.set_format(type='torch', columns=['input_ids', 'attention_mask'])
 
     # DataLoader for the dataset
     train_dataloader = DataLoader(
         train_dataset, batch_size=16, num_workers=4, pin_memory=True
     )
-    # test_dataloader = DataLoader(test_dataset, batch_size=16, num_workers=4, pin_memory=True)
 
+    # Get the first device for both models
     student_first_device = list(student_model.hf_device_map.values())[0]
     teacher_first_device = list(teacher_model.hf_device_map.values())[0]
 
@@ -89,6 +96,7 @@ def train():
 
     print("Starting training")
     for epoch in range(num_epochs):
+        # Distillation configuration parameters
         alpha = 8
         lambd = 0.7
         beta = 0.3
@@ -99,23 +107,30 @@ def train():
         total_loss = 0
         epoch_start = time.time()
 
+        # Iterate over the training dataloader
         for step, batch in enumerate(train_dataloader):
+            # Move the perplexity metric to the student's first device
             perplexity_metric = Perplexity().to(student_first_device)
 
+            # Move input_ids and attention_mask to the student's first device
             input_ids = batch["input_ids"].to(student_first_device)
             attention_mask = batch["attention_mask"].to(student_first_device)
             labels = input_ids.clone().detach()
 
+            # Compute the teacher's logits without gradients
             with torch.no_grad():
                 teacher_logits = teacher_model(
                     input_ids.to(teacher_first_device),
                     attention_mask=attention_mask.to(teacher_first_device),
                 ).logits
 
+            # Compute the student's logits
             student_logits = student_model(
                 input_ids=input_ids, attention_mask=attention_mask
             ).logits
 
+            # Compute the distillation loss components
+            # Using the prototype_log_loss function to compute the loss and its components
             loss, kl, align, toptok, entropy = prototype_log_loss(
                 student_logits=student_logits,
                 teacher_logits=teacher_logits,
@@ -123,6 +138,7 @@ def train():
                 return_components=True,
             )
 
+            # Every 100 steps, print the loss components
             if step % 100 == 0:
                 print(
                     f"Epoch {epoch} Step {step}: "
@@ -130,14 +146,17 @@ def train():
                     f"TopTok={toptok.item():.4f} | Entropy={entropy.item():.2f}"
                 )
 
+            # Zero the gradients, perform backpropagation, and update the model parameters
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
+            # Update the perplexity metric with the student's log probabilities
             log_probs = F.log_softmax(student_logits, dim=-1)
             perplexity_metric.update(log_probs, labels)
             total_loss += loss.item()
 
+        # Compute the average loss for the epoch and the time taken for the epoch
         epoch_loss = total_loss / len(train_dataloader)
         epoch_time = time.time() - epoch_start
         perplexity_score = perplexity_metric.compute()
@@ -146,6 +165,7 @@ def train():
             f"Epoch [{epoch + 1}/{num_epochs}], Loss: {epoch_loss:.4f}, Perplexity: {perplexity_score}, Time: {epoch_time:.2f}s"
         )
 
+        # Append the epoch loss and perplexity score to the history for plotting
         loss_history.append(epoch_loss)
         ppl_history.append(perplexity_score)
 
@@ -157,6 +177,7 @@ def train():
     student_model.save_pretrained(out_dir)
     student_tokenizer.save_pretrained(out_dir)
 
+    # Plot the training metrics
     plot_metrics(
         metrics={"loss": loss_history, "perplexity": ppl_history},
         run_tag="wikitext",
